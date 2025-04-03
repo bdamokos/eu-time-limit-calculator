@@ -267,28 +267,33 @@ function handleSubmit(event) {
     document.getElementById('result').innerHTML = formatResult(result);
 }
 
-// Add event listener to the form
-document.getElementById('periodForm').addEventListener('submit', handleSubmit);
+// Export for Node.js while preserving browser functionality
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { calculatePeriod };
+} else if (typeof window !== 'undefined') {
+    // Browser-specific code
+    document.getElementById('periodForm').addEventListener('submit', handleSubmit);
 
-// Add event listener when the document is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    // Set default date to today
-    const eventDateInput = document.getElementById('eventDate');
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    eventDateInput.value = `${year}-${month}-${day}`;
-    
-    // Add event listener to period type select to toggle time input requirement
-    const periodTypeSelect = document.getElementById('periodType');
-    const eventTimeInput = document.getElementById('eventTime');
-    
-    periodTypeSelect.addEventListener('change', function() {
-        if (this.value === 'hours') {
-            eventTimeInput.required = true;
-        } else {
-            eventTimeInput.required = false;
-        }
+    // Add event listener when the document is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default date to today
+        const eventDateInput = document.getElementById('eventDate');
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        eventDateInput.value = `${year}-${month}-${day}`;
+        
+        // Add event listener to period type select to toggle time input requirement
+        const periodTypeSelect = document.getElementById('periodType');
+        const eventTimeInput = document.getElementById('eventTime');
+        
+        periodTypeSelect.addEventListener('change', function() {
+            if (this.value === 'hours') {
+                eventTimeInput.required = true;
+            } else {
+                eventTimeInput.required = false;
+            }
+        });
     });
-}); 
+} 
