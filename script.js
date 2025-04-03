@@ -147,7 +147,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly
             endDate.setDate(endDate.getDate() + (periodValue * 7) - 1);
             result.explanation.push(`According to Article 3(2)(c), a period expressed in weeks runs from the start date to the same day of the week on the last week of the period. The period ends at ${endDate.toLocaleDateString()}.`);
         } else if (periodType === 'months') {
-            endDate.setMonth(endDate.getMonth() + periodType);
+            endDate.setMonth(endDate.getMonth() + periodValue);
             endDate.setDate(endDate.getDate() - 1);
             result.explanation.push(`According to Article 3(2)(c), a period expressed in months runs from the start date to the same date on the last month of the period. The period ends at ${endDate.toLocaleDateString()}.`);
         } else if (periodType === 'years') {
