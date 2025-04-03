@@ -33,6 +33,11 @@ const euHolidays = [
 ];
 
 function isHoliday(date) {
+    // Check if the date is valid before trying to convert it
+    if (isNaN(date.getTime())) {
+        return false; // Invalid date is not a holiday
+    }
+    
     const dateString = date.toISOString().split('T')[0];
     return euHolidays.includes(dateString);
 }
