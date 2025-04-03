@@ -6,92 +6,110 @@
     <title>EU Regulation 1182/71 Date Calculator</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             line-height: 1.6;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             color: #333;
-        }
-        h1, h2, h3 {
-            color: #2c3e50;
+            background-color: #f5f5f5;
         }
         .container {
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #1a73e8;
+            margin-bottom: 30px;
+            font-size: 24px;
         }
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #444;
         }
         input, select {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 6px;
             box-sizing: border-box;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
         }
         button {
-            background-color: #3498db;
+            background-color: #1a73e8;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
+            padding: 12px 24px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.2s;
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #1557b0;
         }
         .result-container {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #fff;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
         }
-        .explanation-section, .dates-section, .rules-section {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+        .result-date {
+            font-size: 24px;
+            font-weight: 500;
+            color: #1a73e8;
+            margin-bottom: 15px;
         }
-        .explanation-section:last-child, .dates-section:last-child, .rules-section:last-child {
-            border-bottom: none;
+        .result-explanation {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
         }
-        ul {
-            padding-left: 20px;
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-        li {
-            margin-bottom: 8px;
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
         }
-        .info-box {
-            background-color: #e8f4f8;
-            border-left: 4px solid #3498db;
-            padding: 15px;
-            margin-bottom: 20px;
+        .checkbox-group label {
+            margin: 0;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e9ecef;
+        }
+        footer a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>EU Regulation 1182/71 Date Calculator</h1>
-        
-        <div class="info-box">
-            <h2>About This Calculator</h2>
-            <p>This calculator implements the rules for calculating periods according to EU Regulation 1182/71, specifically Article 3. The calculator handles:</p>
-            <ul>
-                <li><strong>Article 3(1):</strong> Excluding the day/hour of the event</li>
-                <li><strong>Article 3(2):</strong> Calculating periods in hours, days, weeks, months, or years</li>
-                <li><strong>Article 3(3):</strong> Including holidays and weekends by default</li>
-                <li><strong>Article 3(4):</strong> Extending to the next working day if the period ends on a holiday or weekend</li>
-            </ul>
-        </div>
         
         <form id="periodForm">
             <div class="form-group">
@@ -100,8 +118,9 @@
             </div>
             
             <div class="form-group">
-                <label for="eventTime">Event Time:</label>
-                <input type="time" id="eventTime" required>
+                <label for="eventTime">Event Time (optional):</label>
+                <input type="time" id="eventTime">
+                <small style="color: #666; display: block; margin-top: 4px;">Only required for hour-based calculations</small>
             </div>
             
             <div class="form-group">
@@ -121,10 +140,10 @@
             </div>
             
             <div class="form-group">
-                <label>
+                <div class="checkbox-group">
                     <input type="checkbox" id="workingDaysOnly">
-                    Working Days Only (exclude holidays and weekends)
-                </label>
+                    <label for="workingDaysOnly">Working Days Only (exclude holidays and weekends)</label>
+                </div>
             </div>
             
             <button type="submit">Calculate</button>
@@ -132,6 +151,11 @@
         
         <div id="result"></div>
     </div>
+    
+    <footer>
+        <p>This calculator implements <a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank">EU Regulation 1182/71</a>, which determines the rules applicable to periods, dates and time limits in EU law.</p>
+        <p>Regulation (EEC, Euratom) No 1182/71 of the Council of 3 June 1971 determining the rules applicable to periods, dates and time limits.</p>
+    </footer>
     
     <script src="script.js"></script>
 </body>

@@ -177,32 +177,16 @@ function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly
 function formatResult(result) {
     let output = '<div class="result-container">';
     
-    // Add the explanation section
-    output += '<div class="explanation-section">';
-    output += '<h3>Explanation of Applied Rules</h3>';
-    output += '<ul>';
-    result.explanation.forEach(explanation => {
-        output += `<li>${explanation}</li>`;
-    });
-    output += '</ul>';
-    output += '</div>';
+    // Add the final end date
+    output += `<div class="result-date">End Date: ${result.finalEndDate.toLocaleString()}</div>`;
     
-    // Add the dates section
-    output += '<div class="dates-section">';
-    output += '<h3>Calculated Dates</h3>';
-    output += `<p><strong>Initial End Date:</strong> ${result.initialEndDate.toLocaleString()}</p>`;
-    output += `<p><strong>Final End Date:</strong> ${result.finalEndDate.toLocaleString()}</p>`;
-    output += '</div>';
-    
-    // Add the rules section
-    output += '<div class="rules-section">';
-    output += '<h3>Applied Rules</h3>';
-    output += '<ul>';
-    result.appliedRules.forEach(rule => {
-        output += `<li>${rule}</li>`;
-    });
-    output += '</ul>';
-    output += '</div>';
+    // Add explanation if the final date differs from initial date
+    if (result.finalEndDate.getTime() !== result.initialEndDate.getTime()) {
+        output += '<div class="result-explanation">';
+        output += `Note: The original end date (${result.initialEndDate.toLocaleString()}) falls on a non-working day, `;
+        output += `so according to Article 3(4), the period has been extended to the next working day.`;
+        output += '</div>';
+    }
     
     output += '</div>';
     return output;
@@ -218,10 +202,23 @@ function handleSubmit(event) {
     const periodType = document.getElementById('periodType').value;
     const workingDaysOnly = document.getElementById('workingDaysOnly').checked;
     
-    const eventDateTime = new Date(`${eventDate}T${eventTime}`);
+    // Validate time input for hour-based calculations
+    if (periodType === 'hours' && !eventTime) {
+        alert('Event time is required for hour-based calculations');
+        return;
+    }
+    
+    // Create event date/time
+    const eventDateTime = new Date(eventDate);
+    if (eventTime) {
+        const [hours, minutes] = eventTime.split(':');
+        eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else {
+        // If no time provided, set to start of day
+        eventDateTime.setHours(0, 0, 0, 0);
+    }
     
     const result = calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly);
-    
     document.getElementById('result').innerHTML = formatResult(result);
 }
 
@@ -230,15 +227,23 @@ document.getElementById('periodForm').addEventListener('submit', handleSubmit);
 
 // Add event listener when the document is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Set default start date to current date and time
-    const startDateInput = document.getElementById('startDate');
-    if (startDateInput) {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        startDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
+    // Set default date to today
+    const eventDateInput = document.getElementById('eventDate');
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    eventDateInput.value = `${year}-${month}-${day}`;
+    
+    // Add event listener to period type select to toggle time input requirement
+    const periodTypeSelect = document.getElementById('periodType');
+    const eventTimeInput = document.getElementById('eventTime');
+    
+    periodTypeSelect.addEventListener('change', function() {
+        if (this.value === 'hours') {
+            eventTimeInput.required = true;
+        } else {
+            eventTimeInput.required = false;
+        }
+    });
 }); 
