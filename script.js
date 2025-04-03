@@ -10,8 +10,7 @@ const euHolidays = [
     '2025-06-09', // Whit Monday
     '2025-08-15', // Assumption
     // National Days (Note: these depend on place of employment)
-    '2025-06-23', // National Day in Luxembourg
-    '2025-07-14', // National Day in France
+
     '2025-07-21', // National Day in Belgium
     
     // Office closing days 2025
