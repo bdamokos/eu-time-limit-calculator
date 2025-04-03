@@ -1,5 +1,31 @@
-// EU holidays and office closing days for 2025 (European Parliament official calendar)
+// EU holidays and office closing days for 2024-2025 (European Parliament official calendar)
 const euHolidays = [
+    // Public holidays 2024
+    '2024-01-01', // New Year's Day
+    '2024-03-29', // Good Friday
+    '2024-04-01', // Easter Monday
+    '2024-05-01', // Wednesday, Labour Day
+    '2024-05-09', // Thursday, Anniversary of the Schuman declaration / Ascension Day
+    '2024-05-20', // Whit Monday
+    '2024-08-15', // Thursday, Assumption
+    '2024-11-01', // Friday, All Saints' Day
+    
+    // Office closing days 2024
+    '2024-01-02', // Tuesday, day following New Year's Day
+    '2024-03-28', // Maundy Thursday
+    '2024-05-10', // Friday, day following Ascension Day
+    // Christmas and New Year period 2024
+    '2024-12-23',
+    '2024-12-24',
+    '2024-12-25',
+    '2024-12-26',
+    '2024-12-27',
+    '2024-12-30',
+    '2024-12-31',
+    '2025-01-01',
+    '2025-01-02',
+    '2025-01-03',
+
     // Public holidays 2025
     '2025-01-01', // New Year's Day
     '2025-04-18', // Good Friday
@@ -10,7 +36,6 @@ const euHolidays = [
     '2025-06-09', // Whit Monday
     '2025-08-15', // Assumption
     // National Days (Note: these depend on place of employment)
-
     '2025-07-21', // National Day in Belgium
     
     // Office closing days 2025
