@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EU Date Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>EU Date Calculator</h1>
+        <p class="description">Calculate dates according to EU Regulation 1182/71</p>
+        
+        <div class="calculator">
+            <div class="input-group">
+                <label for="startDate">Start Date:</label>
+                <input type="datetime-local" id="startDate" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="periodType">Period Type:</label>
+                <select id="periodType">
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                    <option value="weeks">Weeks</option>
+                    <option value="months">Months</option>
+                    <option value="years">Years</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label for="periodValue">Period Value:</label>
+                <input type="number" id="periodValue" min="1" value="1" required>
+            </div>
+            
+            <div class="input-group">
+                <label>
+                    <input type="checkbox" id="workingDaysOnly">
+                    Working Days Only (excluding weekends and holidays)
+                </label>
+            </div>
+            
+            <button onclick="calculateDate()">Calculate End Date</button>
+            
+            <div class="result" id="result">
+                <h3>Result:</h3>
+                <p id="endDate"></p>
+            </div>
+        </div>
+        
+        <div class="info">
+            <h2>About EU Regulation 1182/71</h2>
+            <p>This calculator implements the rules for calculating periods according to EU Regulation 1182/71, which includes:</p>
+            <ul>
+                <li>Periods expressed in hours, days, weeks, months, or years</li>
+                <li>Working days calculation (excluding weekends and holidays)</li>
+                <li>Special rules for month-end calculations</li>
+                <li>Rules for periods starting from an event or action</li>
+            </ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
