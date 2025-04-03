@@ -1,3 +1,23 @@
+/**
+ * Test suite for the period calculation implementation
+ * 
+ * To run the tests:
+ * 1. Open a terminal
+ * 2. Navigate to the project directory
+ * 3. Run: node test_all.js
+ * 
+ * The tests will verify all aspects of the period calculation:
+ * - Article 3(1): Skip event hour/day
+ * - Article 3(2): Period calculation (working days and calendar days)
+ * - Article 3(3): Holidays and weekends handling
+ * - Article 3(4): Extension to next working day
+ * 
+ * Each test will output its results to the console, showing:
+ * - The test scenario being run
+ * - The explanation of how the period was calculated
+ * - The final end date of the period
+ */
+
 // Test file for all articles using script.js
 const { calculatePeriod } = require('./script.js');
 
