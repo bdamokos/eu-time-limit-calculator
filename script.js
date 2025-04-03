@@ -10,6 +10,8 @@ const euHolidays = [
     '2025-06-09', // Whit Monday
     '2025-08-15', // Assumption
     // National Days (Note: these depend on place of employment)
+    '2025-06-23', // National Day in Luxembourg
+    '2025-07-14', // National Day in France
     '2025-07-21', // National Day in Belgium
     
     // Office closing days 2025
@@ -44,173 +46,187 @@ function isWorkingDay(date) {
     return !isWeekend(date) && !isHoliday(date);
 }
 
-function addDays(date, days) {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-}
-
-function addWorkingDays(date, days) {
-    let result = new Date(date);
-    let remainingDays = days;
-    
-    while (remainingDays > 0) {
-        result = addDays(result, 1);
-        if (isWorkingDay(result)) {
-            remainingDays--;
-        }
-    }
-    
-    return result;
-}
-
-// Find the next working day after a given date
 function findNextWorkingDay(date) {
     let nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
-    
     while (!isWorkingDay(nextDay)) {
         nextDay.setDate(nextDay.getDate() + 1);
     }
-    
     return nextDay;
 }
 
-// Apply Article 3(4): If the last day is a holiday/weekend, extend to the next working day
-function applyArticle34(date) {
-    // Check if the date is a weekend or holiday
-    if (!isWorkingDay(date)) {
-        // Find the next working day
-        const nextWorkingDay = findNextWorkingDay(date);
-        
-        // Set the time to the end of the day (23:59:59)
-        nextWorkingDay.setHours(23, 59, 59, 999);
-        
-        return nextWorkingDay;
+// Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
+function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly = false) {
+    const result = {
+        initialEndDate: null,
+        finalEndDate: null,
+        appliedRules: [],
+        explanation: []
+    };
+
+    // Start with event date
+    let startDate = new Date(eventDateTime);
+    
+    // Apply Article 3(1) - Skip the event hour/day
+    if (periodType === 'hours') {
+        // For hours: skip to the next hour's beginning
+        startDate.setMinutes(0, 0, 0);
+        startDate.setHours(startDate.getHours() + 1);
+        result.appliedRules.push('Article 3(1): Hour of event not counted, starting from next hour');
+        result.explanation.push(`According to Article 3(1), the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the next hour (${startDate.getHours()}:00).`);
+    } else {
+        // For other periods: skip to next day's beginning
+        startDate.setDate(startDate.getDate() + 1);
+        startDate.setHours(0, 0, 0, 0);
+        result.appliedRules.push('Article 3(1): Day of event not counted, starting from next day');
+        result.explanation.push(`According to Article 3(1), the day of the event (${eventDateTime.toLocaleDateString()}) is not counted. The period starts from the next day (${startDate.toLocaleDateString()}).`);
+    }
+
+    // Apply Article 3(2) - Calculate the period
+    let endDate = new Date(startDate);
+    if (periodType === 'hours') {
+        endDate.setHours(endDate.getHours() + periodValue - 1);
+        endDate.setMinutes(59, 59, 999);
+        result.appliedRules.push(`Article 3(2)(a): ${periodValue} hour period calculated`);
+        result.explanation.push(`According to Article 3(2)(a), a period expressed in hours runs from the start time to the same time on the last hour of the period. The period ends at ${endDate.toLocaleString()}.`);
+    } else if (periodType === 'days') {
+        if (workingDaysOnly) {
+            let remainingDays = periodValue;
+            let countedDays = 0;
+            let skippedDays = 0;
+            while (remainingDays > 0) {
+                endDate.setDate(endDate.getDate() + 1);
+                if (isWorkingDay(endDate)) {
+                    remainingDays--;
+                    countedDays++;
+                } else {
+                    skippedDays++;
+                }
+            }
+            result.appliedRules.push(`Article 3(2)(b): ${periodValue} working days calculated`);
+            result.explanation.push(`According to Article 3(2)(b), a period expressed in working days excludes holidays and weekends. The period includes ${countedDays} working days and skips ${skippedDays} non-working days.`);
+        } else {
+            endDate.setDate(endDate.getDate() + periodValue - 1);
+            result.appliedRules.push(`Article 3(2)(b): ${periodValue} calendar days calculated`);
+            result.explanation.push(`According to Article 3(2)(b), a period expressed in days runs from the start date to the same date on the last day of the period. The period ends at ${endDate.toLocaleDateString()}.`);
+        }
+        endDate.setHours(23, 59, 59, 999);
+    } else {
+        // Weeks, months, years
+        const originalDate = endDate.getDate();
+        if (periodType === 'weeks') {
+            endDate.setDate(endDate.getDate() + (periodValue * 7) - 1);
+            result.explanation.push(`According to Article 3(2)(c), a period expressed in weeks runs from the start date to the same day of the week on the last week of the period. The period ends at ${endDate.toLocaleDateString()}.`);
+        } else if (periodType === 'months') {
+            endDate.setMonth(endDate.getMonth() + periodType);
+            endDate.setDate(endDate.getDate() - 1);
+            result.explanation.push(`According to Article 3(2)(c), a period expressed in months runs from the start date to the same date on the last month of the period. The period ends at ${endDate.toLocaleDateString()}.`);
+        } else if (periodType === 'years') {
+            endDate.setFullYear(endDate.getFullYear() + periodValue);
+            endDate.setDate(endDate.getDate() - 1);
+            result.explanation.push(`According to Article 3(2)(c), a period expressed in years runs from the start date to the same date on the last year of the period. The period ends at ${endDate.toLocaleDateString()}.`);
+        }
+        endDate.setHours(23, 59, 59, 999);
+        result.appliedRules.push(`Article 3(2)(c): ${periodValue} ${periodType} calculated`);
     }
     
-    return date;
-}
+    result.initialEndDate = new Date(endDate);
 
-function calculateDate() {
-    try {
-        const startDateElement = document.getElementById('startDate');
-        const periodTypeElement = document.getElementById('periodType');
-        const periodValueElement = document.getElementById('periodValue');
-        const workingDaysOnlyElement = document.getElementById('workingDaysOnly');
-        const endDateElement = document.getElementById('endDate');
-        const resultDiv = document.getElementById('result');
-
-        if (!startDateElement || !periodTypeElement || !periodValueElement || 
-            !workingDaysOnlyElement || !endDateElement || !resultDiv) {
-            console.error('One or more required elements not found');
-            return;
-        }
-
-        if (!startDateElement.value) {
-            alert('Please select a start date and time');
-            return;
-        }
-
-        const startDate = new Date(startDateElement.value);
-        if (isNaN(startDate.getTime())) {
-            console.error('Invalid start date:', startDateElement.value);
-            return;
-        }
-
-        const periodType = periodTypeElement.value;
-        const periodValue = parseInt(periodValueElement.value);
-        const workingDaysOnly = workingDaysOnlyElement.checked;
-        
-        if (isNaN(periodValue) || periodValue < 1) {
-            alert('Please enter a valid period value (must be 1 or greater)');
-            return;
-        }
-        
-        let endDate;
-        
-        // According to Article 3 of the regulation
-        if (periodType === 'hours') {
-            endDate = new Date(startDate);
-            endDate.setHours(endDate.getHours() + periodValue);
-        } else {
-            if (workingDaysOnly) {
-                endDate = addWorkingDays(startDate, periodValue);
-            } else {
-                endDate = addDays(startDate, periodValue);
-                
-                // Special handling for months and years
-                if (periodType === 'months') {
-                    endDate.setMonth(endDate.getMonth() + periodValue);
-                } else if (periodType === 'years') {
-                    endDate.setFullYear(endDate.getFullYear() + periodValue);
-                } else if (periodType === 'weeks') {
-                    endDate = addDays(startDate, periodValue * 7);
-                }
-                
-                // Apply Article 3(4) - extend to next working day if end date is a holiday/weekend
-                endDate = applyArticle34(endDate);
-            }
-        }
-        
-        if (!endDate || isNaN(endDate.getTime())) {
-            console.error('Invalid end date calculated');
-            return;
-        }
-
-        // Format the result
-        const options = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        
-        const formattedDate = endDate.toLocaleDateString('en-US', options);
-        console.log('Formatted end date:', formattedDate);
-        endDateElement.textContent = formattedDate;
-        
-        // Add explanation
-        const explanation = document.createElement('p');
-        explanation.style.marginTop = '1rem';
-        explanation.style.fontSize = '0.9rem';
-        explanation.style.color = '#666';
-        
-        if (workingDaysOnly) {
-            explanation.textContent = 'Note: Calculation excludes weekends and EU holidays.';
-        } else {
-            // Check if Article 3(4) was applied
-            const originalEndDate = new Date(startDate);
-            if (periodType === 'months') {
-                originalEndDate.setMonth(originalEndDate.getMonth() + periodValue);
-            } else if (periodType === 'years') {
-                originalEndDate.setFullYear(originalEndDate.getFullYear() + periodValue);
-            } else if (periodType === 'weeks') {
-                originalEndDate.setDate(originalEndDate.getDate() + periodValue * 7);
-            } else {
-                originalEndDate.setDate(originalEndDate.getDate() + periodValue);
-            }
-            
-            if (!isWorkingDay(originalEndDate) && periodType !== 'hours') {
-                explanation.textContent = 'Note: According to Article 3(4), the period has been extended to the next working day as the calculated end date fell on a weekend or holiday.';
-            } else {
-                explanation.textContent = 'Note: Calculation includes all days (including weekends and holidays).';
-            }
-        }
-        
-        const existingExplanation = resultDiv.querySelector('p:last-child');
-        if (existingExplanation && existingExplanation !== endDateElement) {
-            resultDiv.removeChild(existingExplanation);
-        }
-        resultDiv.appendChild(explanation);
-
-    } catch (error) {
-        console.error('Error in calculateDate:', error);
-        alert('An error occurred while calculating the date. Please check the console for details.');
+    // Apply Article 3(3) - Include holidays and weekends by default
+    if (!workingDaysOnly) {
+        result.appliedRules.push('Article 3(3): Holidays and weekends are included in the period');
+        result.explanation.push(`According to Article 3(3), holidays and weekends are included in the period by default.`);
+    } else {
+        result.appliedRules.push('Article 3(3): Working days only specified, holidays and weekends are excluded');
+        result.explanation.push(`According to Article 3(3), since "working days only" was specified, holidays and weekends are excluded from the period.`);
     }
+
+    // Apply Article 3(4) - Extend to next working day if needed
+    // Only apply if:
+    // 1. Period is not in hours
+    // 2. Not already using working days
+    // 3. End date falls on weekend or holiday
+    if (periodType !== 'hours' && !workingDaysOnly && !isWorkingDay(endDate)) {
+        const nextWorkDay = findNextWorkingDay(endDate);
+        nextWorkDay.setHours(23, 59, 59, 999);
+        result.finalEndDate = nextWorkDay;
+        result.appliedRules.push(
+            'Article 3(4): End date falls on non-working day, extended to next working day',
+            `- Original end date: ${endDate.toLocaleString()}`,
+            `- Extended to: ${nextWorkDay.toLocaleString()}`
+        );
+        result.explanation.push(`According to Article 3(4), since the period ends on a non-working day (${endDate.toLocaleDateString()}), it is extended to the next working day (${nextWorkDay.toLocaleDateString()}).`);
+    } else {
+        result.finalEndDate = endDate;
+        if (periodType === 'hours') {
+            result.appliedRules.push('Article 3(4): Not applied - period expressed in hours');
+            result.explanation.push(`Article 3(4) does not apply because the period is expressed in hours.`);
+        } else if (workingDaysOnly) {
+            result.appliedRules.push('Article 3(4): Not applied - already using working days');
+            result.explanation.push(`Article 3(4) does not apply because the period is already using working days.`);
+        } else {
+            result.appliedRules.push('Article 3(4): Not applied - end date is already a working day');
+            result.explanation.push(`Article 3(4) does not apply because the period ends on a working day (${endDate.toLocaleDateString()}).`);
+        }
+    }
+
+    return result;
 }
+
+// Function to format the result for display
+function formatResult(result) {
+    let output = '<div class="result-container">';
+    
+    // Add the explanation section
+    output += '<div class="explanation-section">';
+    output += '<h3>Explanation of Applied Rules</h3>';
+    output += '<ul>';
+    result.explanation.forEach(explanation => {
+        output += `<li>${explanation}</li>`;
+    });
+    output += '</ul>';
+    output += '</div>';
+    
+    // Add the dates section
+    output += '<div class="dates-section">';
+    output += '<h3>Calculated Dates</h3>';
+    output += `<p><strong>Initial End Date:</strong> ${result.initialEndDate.toLocaleString()}</p>`;
+    output += `<p><strong>Final End Date:</strong> ${result.finalEndDate.toLocaleString()}</p>`;
+    output += '</div>';
+    
+    // Add the rules section
+    output += '<div class="rules-section">';
+    output += '<h3>Applied Rules</h3>';
+    output += '<ul>';
+    result.appliedRules.forEach(rule => {
+        output += `<li>${rule}</li>`;
+    });
+    output += '</ul>';
+    output += '</div>';
+    
+    output += '</div>';
+    return output;
+}
+
+// Function to handle form submission
+function handleSubmit(event) {
+    event.preventDefault();
+    
+    const eventDate = document.getElementById('eventDate').value;
+    const eventTime = document.getElementById('eventTime').value;
+    const periodValue = parseInt(document.getElementById('periodValue').value);
+    const periodType = document.getElementById('periodType').value;
+    const workingDaysOnly = document.getElementById('workingDaysOnly').checked;
+    
+    const eventDateTime = new Date(`${eventDate}T${eventTime}`);
+    
+    const result = calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly);
+    
+    document.getElementById('result').innerHTML = formatResult(result);
+}
+
+// Add event listener to the form
+document.getElementById('periodForm').addEventListener('submit', handleSubmit);
 
 // Add event listener when the document is loaded
 document.addEventListener('DOMContentLoaded', function() {
