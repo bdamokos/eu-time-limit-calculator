@@ -120,25 +120,41 @@ function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly
         result.explanation.push(`According to Article 3(2)(a), a period expressed in hours runs from the start time to the same time on the last hour of the period. The period ends at ${endDate.toLocaleString()}.`);
     } else if (periodType === 'days') {
         if (workingDaysOnly) {
+            // For working days, we need to count exactly the specified number of working days
             let remainingDays = periodValue;
-            let countedDays = 0;
-            let skippedDays = 0;
-            while (remainingDays > 0) {
-                endDate.setDate(endDate.getDate() + 1);
-                if (isWorkingDay(endDate)) {
-                    remainingDays--;
-                    countedDays++;
-                } else {
-                    skippedDays++;
+            let currentDate = new Date(startDate);
+            
+            // Handle the case of 0-day periods
+            if (remainingDays === 0) {
+                // For 0-day periods, the end date is the same as the start date
+                endDate = new Date(currentDate);
+            } else {
+                // First, count the working days
+                while (remainingDays > 0) {
+                    if (isWorkingDay(currentDate)) {
+                        remainingDays--;
+                    }
+                    // Only increment the date if we still need more working days
+                    if (remainingDays > 0) {
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
                 }
+                
+                // Now set the end date to the last working day
+                endDate = new Date(currentDate);
             }
+            
             result.appliedRules.push(`Article 3(2)(b): ${periodValue} working days calculated`);
-            result.explanation.push(`According to Article 3(2)(b), a period expressed in working days excludes holidays and weekends. The period includes ${countedDays} working days and skips ${skippedDays} non-working days.`);
+            result.explanation.push(`According to Article 3(2)(b), a period expressed in working days excludes holidays and weekends. The period ends at ${endDate.toLocaleString()}.`);
         } else {
+            // For calendar days, we need to add (periodValue - 1) days to the start date
+            // This ensures that a 1-day period is exactly 1 day long
             endDate.setDate(endDate.getDate() + periodValue - 1);
             result.appliedRules.push(`Article 3(2)(b): ${periodValue} calendar days calculated`);
             result.explanation.push(`According to Article 3(2)(b), a period expressed in days runs from the start date to the same date on the last day of the period. The period ends at ${endDate.toLocaleDateString()}.`);
         }
+        
+        // Set the end time to 23:59:59.999 for all day-based periods
         endDate.setHours(23, 59, 59, 999);
     } else {
         // Weeks, months, years
