@@ -294,6 +294,14 @@ if (typeof module !== 'undefined' && module.exports) {
             } else {
                 eventTimeInput.required = false;
             }
+            updateCalculation();
+        });
+
+        // Add event listeners for all input changes
+        const formInputs = document.querySelectorAll('#periodForm input, #periodForm select');
+        formInputs.forEach(input => {
+            input.addEventListener('change', updateCalculation);
+            input.addEventListener('input', updateCalculation);
         });
 
         // Add event listeners for preset buttons
@@ -308,9 +316,43 @@ if (typeof module !== 'undefined' && module.exports) {
                 document.getElementById('periodType').value = type;
                 document.getElementById('workingDaysOnly').checked = workingDays;
                 
-                // Trigger form submission
-                document.getElementById('periodForm').dispatchEvent(new Event('submit'));
+                updateCalculation();
             });
         });
+
+        // Initial calculation
+        updateCalculation();
     });
+
+    // Function to update the calculation
+    function updateCalculation() {
+        const eventDate = document.getElementById('eventDate').value;
+        const eventTime = document.getElementById('eventTime').value;
+        const periodValue = parseInt(document.getElementById('periodValue').value);
+        const periodType = document.getElementById('periodType').value;
+        const workingDaysOnly = document.getElementById('workingDaysOnly').checked;
+        
+        // Validate inputs
+        if (!eventDate || !periodValue || isNaN(periodValue)) {
+            return;
+        }
+        
+        // Validate time input for hour-based calculations
+        if (periodType === 'hours' && !eventTime) {
+            return;
+        }
+        
+        // Create event date/time
+        const eventDateTime = new Date(eventDate);
+        if (eventTime) {
+            const [hours, minutes] = eventTime.split(':');
+            eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        } else {
+            // If no time provided, set to start of day
+            eventDateTime.setHours(0, 0, 0, 0);
+        }
+        
+        const result = calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly);
+        document.getElementById('result').innerHTML = formatResult(result);
+    }
 } 
