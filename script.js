@@ -369,13 +369,17 @@ function renderCalendar(result) {
     const startDate = new Date(result.startDate);
     const endDate = new Date(result.finalEndDate);
     
+    // For retroactive calculations, swap start and end dates for display purposes
+    const displayStart = new Date(Math.min(startDate, endDate));
+    const displayEnd = new Date(Math.max(startDate, endDate));
+    
     // Get first day of start month and last day of end month
-    const displayStart = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const displayEnd = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
+    const firstDisplayMonth = new Date(displayStart.getFullYear(), displayStart.getMonth(), 1);
+    const lastDisplayMonth = new Date(displayEnd.getFullYear(), displayEnd.getMonth() + 1, 0);
 
     // Generate calendar for each month in the range
-    let currentDate = new Date(displayStart);
-    while (currentDate <= displayEnd) {
+    let currentDate = new Date(firstDisplayMonth);
+    while (currentDate <= lastDisplayMonth) {
         const monthWrapper = document.createElement('div');
         monthWrapper.className = 'calendar-month-wrapper';
         monthsContainer.appendChild(monthWrapper);
@@ -411,7 +415,6 @@ function renderMonthCalendar(date, result, container) {
     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     
     // Calculate padding for Monday start
-    // getDay() returns 0 for Sunday, so we need to adjust to get Monday as 0
     let firstDayPadding = firstDay.getDay() - 1;
     if (firstDayPadding === -1) firstDayPadding = 6; // Sunday should be 6 when starting on Monday
     
@@ -445,12 +448,17 @@ function renderMonthCalendar(date, result, container) {
                     dayElement.classList.add('working-day');
                 }
 
+                // For retroactive calculations, we need to check if the date is between end and start
+                // For forward calculations, we check if the date is between start and end
+                const periodStart = new Date(Math.min(result.startDate, result.finalEndDate));
+                const periodEnd = new Date(Math.max(result.startDate, result.finalEndDate));
+
                 // Check if this day is in the calculated period
-                if (currentDate >= result.startDate && currentDate <= result.finalEndDate) {
+                if (currentDate >= periodStart && currentDate <= periodEnd) {
                     dayElement.classList.add('in-period');
                 }
 
-                // Mark start and end dates
+                // Mark start and end dates - for retroactive calculations, these are reversed
                 if (isSameDay(currentDate, result.startDate)) {
                     dayElement.classList.add('start-date');
                 }
@@ -458,9 +466,14 @@ function renderMonthCalendar(date, result, container) {
                     dayElement.classList.add('end-date');
                 }
 
-                // Mark extension days
-                if (result.initialEndDate && currentDate > result.initialEndDate && currentDate <= result.finalEndDate) {
-                    dayElement.classList.add('extension');
+                // Mark extension days - need to handle both forward and retroactive cases
+                if (result.initialEndDate) {
+                    const isForward = result.startDate <= result.finalEndDate;
+                    if (isForward && currentDate > result.initialEndDate && currentDate <= result.finalEndDate) {
+                        dayElement.classList.add('extension');
+                    } else if (!isForward && currentDate < result.initialEndDate && currentDate >= result.finalEndDate) {
+                        dayElement.classList.add('extension');
+                    }
                 }
             }
             
