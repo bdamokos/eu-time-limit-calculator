@@ -11,6 +11,7 @@
  * - Article 3(2): Period calculation (working days and calendar days)
  * - Article 3(3): Holidays and weekends handling
  * - Article 3(4): Extension to next working day
+ * - Article 3(5): Ensuring at least two working days in periods of two days or more
  * 
  * Each test will output its results to the console, showing:
  * - The test scenario being run
@@ -107,10 +108,66 @@ function testArticle34() {
     console.log('\n');
 }
 
+// Test Article 3(5) - Ensuring at least two working days
+function testArticle35() {
+    console.log('\nTesting Article 3(5) - Ensuring at least two working days\n');
+
+    // Test 1: 2-day period during Christmas holidays
+    console.log('Test 1: 2-day period starting from December 24, 2024');
+    const holidayTest = calculatePeriod(new Date('2024-12-24T00:00:00'), 2, 'days', false);
+    console.log('Result:', holidayTest.explanation.join('\n'));
+    console.log('End Date:', holidayTest.finalEndDate.toLocaleString());
+    console.log('Working days found:', holidayTest.workingDaysCount);
+    
+    // The period Dec 25, 2024 to Jan 6, 2025 contains only 1 working day (Jan 6)
+    // Dec 30 is incorrectly counted as a working day in the log but it's defined as a holiday
+    // The period must be extended to Jan 7, 2025 to include 2 working days
+    console.log('Extension to 2nd working day correct:', holidayTest.finalEndDate.toLocaleDateString() === '1/7/2025');
+    console.log('\n');
+
+    // Test 2: 2-day period with only one working day
+    console.log('Test 2: 2-day period starting from April 30, 2025 (May 1 is a holiday)');
+    const singleWorkDayTest = calculatePeriod(new Date('2025-04-30T00:00:00'), 2, 'days', false);
+    console.log('Result:', singleWorkDayTest.explanation.join('\n'));
+    console.log('End Date:', singleWorkDayTest.finalEndDate.toLocaleString());
+    console.log('Extension to 2nd working day correct:', singleWorkDayTest.finalEndDate.toLocaleDateString() === '5/5/2025');
+    console.log('\n');
+}
+
+// Test Article 3(4) and 3(5) together - Holiday period
+function testArticle34And35HolidayPeriod() {
+    console.log('\nTesting Article 3(4) and 3(5) together - Holiday period\n');
+
+    // Test 1: Period starting before Christmas, ending during holidays
+    console.log('Test 1: 7 days starting from December 24, 2024');
+    const test1 = calculatePeriod(new Date('2024-12-24T00:00:00'), 7, 'days', false);
+    console.log('Result:', test1.explanation.join('\n'));
+    console.log('End Date:', test1.finalEndDate.toLocaleString());
+    console.log('\n');
+
+    // Test 2: Period starting during Christmas, ending during holidays
+    console.log('Test 2: 5 days starting from December 26, 2024');
+    const test2 = calculatePeriod(new Date('2024-12-26T00:00:00'), 5, 'days', false);
+    console.log('Result:', test2.explanation.join('\n'));
+    console.log('End Date:', test2.finalEndDate.toLocaleString());
+    console.log('\n');
+
+    // Test 3: Period starting after New Year, ending during holidays
+    console.log('Test 3: 3 days starting from January 2, 2025');
+    const test3 = calculatePeriod(new Date('2025-01-02T00:00:00'), 3, 'days', false);
+    console.log('Result:', test3.explanation.join('\n'));
+    console.log('End Date:', test3.finalEndDate.toLocaleString());
+    console.log('Expected End Date: 2025-01-07T23:59:59.999Z');
+    console.log('Extension to 2nd working day correct:', test3.finalEndDate.toLocaleDateString() === '1/7/2025');
+    console.log('\n');
+}
+
 // Run all tests
 console.log('Starting tests...\n');
 testArticle31();
 testArticle32();
 testArticle33();
 testArticle34();
+testArticle35();
+testArticle34And35HolidayPeriod();
 console.log('All tests completed.'); 
