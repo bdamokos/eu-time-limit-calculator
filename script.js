@@ -85,7 +85,7 @@ function findNextWorkingDay(date) {
 }
 
 // Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
-function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly = false) {
+function calculatePeriod(eventDateTime, periodValue, periodType) {
     const result = {
         initialEndDate: null,
         finalEndDate: null,
@@ -118,8 +118,8 @@ function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly
         endDate.setMinutes(59, 59, 999);
         result.appliedRules.push(`Article 3(2)(a): ${periodValue} hour period calculated`);
         result.explanation.push(`According to Article 3(2)(a), a period expressed in hours runs from the start time to the same time on the last hour of the period. The period ends at ${endDate.toLocaleString()}.`);
-    } else if (periodType === 'days') {
-        if (workingDaysOnly) {
+    } else if (periodType === 'days' || periodType === 'working-days') {
+        if (periodType === 'working-days') {
             // For working days, we need to count exactly the specified number of working days
             let remainingDays = periodValue;
             let currentDate = new Date(startDate);
@@ -177,21 +177,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly
     
     result.initialEndDate = new Date(endDate);
 
-    // Apply Article 3(3) - Include holidays and weekends by default
-    if (!workingDaysOnly) {
-        result.appliedRules.push('Article 3(3): Holidays and weekends are included in the period');
-        result.explanation.push(`According to Article 3(3), holidays and weekends are included in the period by default.`);
-    } else {
-        result.appliedRules.push('Article 3(3): Working days only specified, holidays and weekends are excluded');
-        result.explanation.push(`According to Article 3(3), since "working days only" was specified, holidays and weekends are excluded from the period.`);
-    }
-
     // Apply Article 3(4) - Extend to next working day if needed
     // Only apply if:
     // 1. Period is not in hours
-    // 2. Not already using working days
-    // 3. End date falls on weekend or holiday
-    if (periodType !== 'hours' && !workingDaysOnly && !isWorkingDay(endDate)) {
+    // 2. End date falls on weekend or holiday
+    if (periodType !== 'hours' && !isWorkingDay(endDate)) {
         const nextWorkDay = findNextWorkingDay(endDate);
         nextWorkDay.setHours(23, 59, 59, 999);
         result.finalEndDate = nextWorkDay;
@@ -206,9 +196,6 @@ function calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly
         if (periodType === 'hours') {
             result.appliedRules.push('Article 3(4): Not applied - period expressed in hours');
             result.explanation.push(`Article 3(4) does not apply because the period is expressed in hours.`);
-        } else if (workingDaysOnly) {
-            result.appliedRules.push('Article 3(4): Not applied - already using working days');
-            result.explanation.push(`Article 3(4) does not apply because the period is already using working days.`);
         } else {
             result.appliedRules.push('Article 3(4): Not applied - end date is already a working day');
             result.explanation.push(`Article 3(4) does not apply because the period ends on a working day (${endDate.toLocaleDateString()}).`);
@@ -263,7 +250,7 @@ function handleSubmit(event) {
         eventDateTime.setHours(0, 0, 0, 0);
     }
     
-    const result = calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly);
+    const result = calculatePeriod(eventDateTime, periodValue, periodType);
     document.getElementById('result').innerHTML = formatResult(result);
 }
 
@@ -313,8 +300,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 const workingDays = this.getAttribute('data-working') === 'true';
                 
                 document.getElementById('periodValue').value = value;
-                document.getElementById('periodType').value = type;
-                document.getElementById('workingDaysOnly').checked = workingDays;
+                document.getElementById('periodType').value = workingDays ? 'working-days' : type;
                 
                 updateCalculation();
             });
@@ -330,7 +316,6 @@ if (typeof module !== 'undefined' && module.exports) {
         const eventTime = document.getElementById('eventTime').value;
         const periodValue = parseInt(document.getElementById('periodValue').value);
         const periodType = document.getElementById('periodType').value;
-        const workingDaysOnly = document.getElementById('workingDaysOnly').checked;
         
         // Validate inputs
         if (!eventDate || !periodValue || isNaN(periodValue)) {
@@ -352,7 +337,7 @@ if (typeof module !== 'undefined' && module.exports) {
             eventDateTime.setHours(0, 0, 0, 0);
         }
         
-        const result = calculatePeriod(eventDateTime, periodValue, periodType, workingDaysOnly);
+        const result = calculatePeriod(eventDateTime, periodValue, periodType);
         document.getElementById('result').innerHTML = formatResult(result);
     }
 } 

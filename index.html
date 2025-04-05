@@ -143,14 +143,6 @@
             <div class="form-group">
                 <label for="periodValue">Period Value:</label>
                 <input type="number" id="periodValue" min="1" required>
-                <div class="preset-buttons">
-                    <button type="button" class="preset-btn" data-value="2" data-type="days" data-working="true">2 Working Days</button>
-                    <button type="button" class="preset-btn" data-value="10" data-type="days" data-working="true">10 Working Days</button>
-                    <button type="button" class="preset-btn" data-value="14" data-type="days">14 Days</button>
-                    <button type="button" class="preset-btn" data-value="15" data-type="days">15 Days</button>
-                    <button type="button" class="preset-btn" data-value="6" data-type="weeks">6 Weeks</button>
-                    <button type="button" class="preset-btn" data-value="3" data-type="months">3 Months</button>
-                </div>
             </div>
             
             <div class="form-group">
@@ -158,16 +150,18 @@
                 <select id="periodType" required>
                     <option value="hours">Hours</option>
                     <option value="days">Days</option>
+                    <option value="working-days">Working Days</option>
                     <option value="weeks">Weeks</option>
                     <option value="months">Months</option>
                     <option value="years">Years</option>
                 </select>
-            </div>
-            
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="workingDaysOnly">
-                    <label for="workingDaysOnly">Working Days Only (exclude holidays and weekends)</label>
+                <div class="preset-buttons">
+                    <button type="button" class="preset-btn" data-value="2" data-type="days" data-working="true">2 Working Days</button>
+                    <button type="button" class="preset-btn" data-value="10" data-type="days" data-working="true">10 Working Days</button>
+                    <button type="button" class="preset-btn" data-value="14" data-type="days">14 Days</button>
+                    <button type="button" class="preset-btn" data-value="15" data-type="days">15 Days</button>
+                    <button type="button" class="preset-btn" data-value="6" data-type="weeks">6 Weeks</button>
+                    <button type="button" class="preset-btn" data-value="3" data-type="months">3 Months</button>
                 </div>
             </div>
             
