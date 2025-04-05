@@ -295,5 +295,22 @@ if (typeof module !== 'undefined' && module.exports) {
                 eventTimeInput.required = false;
             }
         });
+
+        // Add event listeners for preset buttons
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const value = this.getAttribute('data-value');
+                const type = this.getAttribute('data-type');
+                const workingDays = this.getAttribute('data-working') === 'true';
+                
+                document.getElementById('periodValue').value = value;
+                document.getElementById('periodType').value = type;
+                document.getElementById('workingDaysOnly').checked = workingDays;
+                
+                // Trigger form submission
+                document.getElementById('periodForm').dispatchEvent(new Event('submit'));
+            });
+        });
     });
 } 

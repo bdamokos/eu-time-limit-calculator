@@ -91,6 +91,23 @@
         .checkbox-group label {
             margin: 0;
         }
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .preset-btn {
+            background-color: #e8f0fe;
+            color: #1a73e8;
+            border: 1px solid #1a73e8;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .preset-btn:hover {
+            background-color: #d2e3fc;
+        }
         footer {
             text-align: center;
             padding: 20px;
@@ -126,6 +143,14 @@
             <div class="form-group">
                 <label for="periodValue">Period Value:</label>
                 <input type="number" id="periodValue" min="1" required>
+                <div class="preset-buttons">
+                    <button type="button" class="preset-btn" data-value="2" data-type="days" data-working="true">2 Working Days</button>
+                    <button type="button" class="preset-btn" data-value="10" data-type="days" data-working="true">10 Working Days</button>
+                    <button type="button" class="preset-btn" data-value="14" data-type="days">14 Days</button>
+                    <button type="button" class="preset-btn" data-value="15" data-type="days">15 Days</button>
+                    <button type="button" class="preset-btn" data-value="6" data-type="weeks">6 Weeks</button>
+                    <button type="button" class="preset-btn" data-value="3" data-type="months">3 Months</button>
+                </div>
             </div>
             
             <div class="form-group">
