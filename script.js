@@ -328,19 +328,31 @@ function formatResult(result) {
     
     // Add explanation
     output += '<div class="result-explanation">';
-        
+    
+    // Step 1: Always explain Article 3(1)
+    if (result.explanation.length > 0 && result.explanation[0].includes('Article 3(1)')) {
+        output += result.explanation[0];
+    }
+    
     // Check which rules were applied
     const article34Applied = result.appliedRules.some(rule => rule.includes('Article 3(4)'));
     const article35Applied = result.appliedRules.some(rule => rule.includes('Article 3(5)'));
     
-    if (article34Applied && article35Applied) {
-        output += result.explanation.join('<br>');
-    } else if (article35Applied) {
-        output += result.explanation.filter(exp => exp.includes('Article 3(5)')).join('<br>');
-    } else if (article34Applied) {
-        output += `Note: The original end date (${result.initialEndDate.toLocaleString()}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day.`;
-    } else if (result.explanation.length > 0) {
-        output += result.explanation[0];
+    // Step 2: Explain initial end date calculation
+    if (result.initialEndDate) {
+        const initialDateStr = result.initialEndDate.toLocaleDateString();
+        const endDateBeforeArt35 = article34Applied ? 
+            result.appliedRules.find(rule => rule.includes('Extended to:'))?.split('Extended to: ')[1] : 
+            result.initialEndDate.toLocaleString();
+        
+        if (article34Applied) {
+            output += `<br>The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${new Date(endDateBeforeArt35).toLocaleDateString()}).`;
+        }
+    }
+    
+    // Step 3: Explain Article 3(5) if applied
+    if (article35Applied && result.explanation.find(exp => exp.includes('Article 3(5)'))) {
+        output += `<br>${result.explanation.find(exp => exp.includes('Article 3(5)'))}`;
     }
     
     output += '</div>';
