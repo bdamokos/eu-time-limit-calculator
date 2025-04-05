@@ -92,6 +92,7 @@ function findNextWorkingDay(date) {
 // Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
 function calculatePeriod(eventDateTime, periodValue, periodType) {
     const result = {
+        startDate: null,
         initialEndDate: null,
         finalEndDate: null,
         appliedRules: [],
@@ -104,6 +105,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
     // Step 1: Apply Article 3(1) - Skip the event hour/day
     let startDate = new Date(eventDateTime);
+    result.startDate = new Date(startDate); // Store the start date
     
     if (periodType === 'hours') {
         startDate.setMinutes(0, 0, 0);
@@ -319,7 +321,166 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     return result;
 }
 
-// Function to format the result for display
+function renderCalendar(result) {
+    const container = document.getElementById('calendar-container');
+    container.innerHTML = '';
+
+    // Create legend
+    const legend = document.createElement('div');
+    legend.className = 'calendar-legend';
+    legend.innerHTML = `
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #1a73e8;"></div>
+            <span>Start Date</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #1557b0;"></div>
+            <span>End Date</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #e8f0fe;"></div>
+            <span>Working Day</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #fff3cd;"></div>
+            <span>Holiday</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #f8f9fa;"></div>
+            <span>Weekend</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="border: 1px solid #1a73e8;"></div>
+            <span>In Period</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="border: 1px dashed #1a73e8;"></div>
+            <span>Extension</span>
+        </div>
+    `;
+    container.appendChild(legend);
+
+    // Create months container
+    const monthsContainer = document.createElement('div');
+    monthsContainer.className = 'calendar-months-container';
+    container.appendChild(monthsContainer);
+
+    // Get the date range to display
+    const startDate = new Date(result.startDate);
+    const endDate = new Date(result.finalEndDate);
+    
+    // Get first day of start month and last day of end month
+    const displayStart = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const displayEnd = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
+
+    // Generate calendar for each month in the range
+    let currentDate = new Date(displayStart);
+    while (currentDate <= displayEnd) {
+        const monthWrapper = document.createElement('div');
+        monthWrapper.className = 'calendar-month-wrapper';
+        monthsContainer.appendChild(monthWrapper);
+        renderMonthCalendar(currentDate, result, monthWrapper);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+}
+
+function renderMonthCalendar(date, result, container) {
+    // Create month header
+    const monthHeader = document.createElement('div');
+    monthHeader.className = 'calendar-month-header';
+    monthHeader.textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    container.appendChild(monthHeader);
+
+    // Create calendar grid
+    const calendar = document.createElement('div');
+    calendar.className = 'calendar';
+
+    // Add day headers - Start with Monday
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    days.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.textContent = day;
+        header.appendChild(dayHeader);
+    });
+    calendar.appendChild(header);
+
+    // Get first day of month and last day of month
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    
+    // Calculate padding for Monday start
+    // getDay() returns 0 for Sunday, so we need to adjust to get Monday as 0
+    let firstDayPadding = firstDay.getDay() - 1;
+    if (firstDayPadding === -1) firstDayPadding = 6; // Sunday should be 6 when starting on Monday
+    
+    // Create a grid of all days
+    const totalDays = firstDayPadding + lastDay.getDate();
+    const totalWeeks = Math.ceil(totalDays / 7);
+    
+    // Create week rows
+    for (let week = 0; week < totalWeeks; week++) {
+        const weekRow = document.createElement('div');
+        weekRow.className = 'calendar-week';
+        
+        // Add days in this week
+        for (let weekday = 0; weekday < 7; weekday++) {
+            const dayNumber = week * 7 + weekday - firstDayPadding + 1;
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (dayNumber > 0 && dayNumber <= lastDay.getDate()) {
+                const currentDate = new Date(date.getFullYear(), date.getMonth(), dayNumber);
+                dayElement.textContent = dayNumber;
+
+                // Add appropriate classes based on the day's properties
+                if (isWeekend(currentDate)) {
+                    dayElement.classList.add('weekend');
+                }
+                if (isHoliday(currentDate)) {
+                    dayElement.classList.add('holiday');
+                }
+                if (isWorkingDay(currentDate)) {
+                    dayElement.classList.add('working-day');
+                }
+
+                // Check if this day is in the calculated period
+                if (currentDate >= result.startDate && currentDate <= result.finalEndDate) {
+                    dayElement.classList.add('in-period');
+                }
+
+                // Mark start and end dates
+                if (isSameDay(currentDate, result.startDate)) {
+                    dayElement.classList.add('start-date');
+                }
+                if (isSameDay(currentDate, result.finalEndDate)) {
+                    dayElement.classList.add('end-date');
+                }
+
+                // Mark extension days
+                if (result.initialEndDate && currentDate > result.initialEndDate && currentDate <= result.finalEndDate) {
+                    dayElement.classList.add('extension');
+                }
+            }
+            
+            weekRow.appendChild(dayElement);
+        }
+        
+        calendar.appendChild(weekRow);
+    }
+
+    container.appendChild(calendar);
+}
+
+// Helper function to compare dates without time
+function isSameDay(date1, date2) {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
+}
+
+// Update the formatResult function to return the HTML string
 function formatResult(result) {
     let output = '<div class="result-container">';
     
@@ -357,6 +518,10 @@ function formatResult(result) {
     
     output += '</div>';
     output += '</div>';
+
+    // Render the calendar visualization
+    renderCalendar(result);
+    
     return output;
 }
 
@@ -368,7 +533,6 @@ function handleSubmit(event) {
     const eventTime = document.getElementById('eventTime').value;
     const periodValue = parseInt(document.getElementById('periodValue').value);
     const periodType = document.getElementById('periodType').value;
-    const workingDaysOnly = document.getElementById('workingDaysOnly').checked;
     
     // Validate time input for hour-based calculations
     if (periodType === 'hours' && !eventTime) {
