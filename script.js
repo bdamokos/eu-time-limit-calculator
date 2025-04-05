@@ -93,6 +93,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         explanation: []
     };
 
+    const isRetroactive = periodValue < 0;
+    const absolutePeriodValue = Math.abs(periodValue);
+
     // Start with event date
     let startDate = new Date(eventDateTime);
     
@@ -100,79 +103,114 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     if (periodType === 'hours') {
         // For hours: skip to the next hour's beginning
         startDate.setMinutes(0, 0, 0);
-        startDate.setHours(startDate.getHours() + 1);
-        result.appliedRules.push('Article 3(1): Hour of event not counted, starting from next hour');
-        result.explanation.push(`According to Article 3(1), the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the next hour (${startDate.getHours()}:00).`);
+        if (isRetroactive) {
+            startDate.setHours(startDate.getHours());
+            result.appliedRules.push('Article 3(1): Hour of event not counted, starting from current hour for retroactive calculation');
+            result.explanation.push(`According to Article 3(1), for retroactive calculation, the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the current hour (${startDate.getHours()}:00) and counts backwards.`);
+        } else {
+            startDate.setHours(startDate.getHours() + 1);
+            result.appliedRules.push('Article 3(1): Hour of event not counted, starting from next hour');
+            result.explanation.push(`According to Article 3(1), the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the next hour (${startDate.getHours()}:00).`);
+        }
     } else {
-        // For other periods: skip to next day's beginning
-        startDate.setDate(startDate.getDate() + 1);
-        startDate.setHours(0, 0, 0, 0);
-        result.appliedRules.push('Article 3(1): Day of event not counted, starting from next day');
-        result.explanation.push(`According to Article 3(1), the day of the event (${eventDateTime.toLocaleDateString()}) is not counted. The period starts from the next day (${startDate.toLocaleDateString()}).`);
+        if (isRetroactive) {
+            startDate.setHours(0, 0, 0, 0);
+            result.appliedRules.push('Article 3(1): Day of event not counted, starting from beginning of current day for retroactive calculation');
+            result.explanation.push(`According to Article 3(1), for retroactive calculation, the day of the event (${eventDateTime.toLocaleDateString()}) is not counted. The period starts from the beginning of the current day and counts backwards.`);
+        } else {
+            startDate.setDate(startDate.getDate() + 1);
+            startDate.setHours(0, 0, 0, 0);
+            result.appliedRules.push('Article 3(1): Day of event not counted, starting from next day');
+            result.explanation.push(`According to Article 3(1), the day of the event (${eventDateTime.toLocaleDateString()}) is not counted. The period starts from the next day (${startDate.toLocaleDateString()}).`);
+        }
     }
 
     // Apply Article 3(2) - Calculate the period
     let endDate = new Date(startDate);
     if (periodType === 'hours') {
-        endDate.setHours(endDate.getHours() + periodValue - 1);
-        endDate.setMinutes(59, 59, 999);
-        result.appliedRules.push(`Article 3(2)(a): ${periodValue} hour period calculated`);
-        result.explanation.push(`According to Article 3(2)(a), a period expressed in hours runs from the start time to the same time on the last hour of the period. The period ends at ${endDate.toLocaleString()}.`);
+        if (isRetroactive) {
+            endDate.setHours(endDate.getHours() - absolutePeriodValue + 1);
+            endDate.setMinutes(0, 0, 0);
+            result.appliedRules.push(`Article 3(2)(a): ${absolutePeriodValue} hour retroactive period calculated`);
+            result.explanation.push(`According to Article 3(2)(a), for a retroactive period, we count backwards ${absolutePeriodValue} hours from the start time. The period ends at ${endDate.toLocaleString()}.`);
+        } else {
+            endDate.setHours(endDate.getHours() + absolutePeriodValue - 1);
+            endDate.setMinutes(59, 59, 999);
+            result.appliedRules.push(`Article 3(2)(a): ${absolutePeriodValue} hour period calculated`);
+            result.explanation.push(`According to Article 3(2)(a), a period expressed in hours runs from the start time to the same time on the last hour of the period. The period ends at ${endDate.toLocaleString()}.`);
+        }
     } else if (periodType === 'days' || periodType === 'working-days') {
         if (periodType === 'working-days') {
             // For working days, we need to count exactly the specified number of working days
-            let remainingDays = periodValue;
+            let remainingDays = absolutePeriodValue;
             let currentDate = new Date(startDate);
             
             // Handle the case of 0-day periods
             if (remainingDays === 0) {
-                // For 0-day periods, the end date is the same as the start date
                 endDate = new Date(currentDate);
             } else {
-                // First, count the working days
-                while (remainingDays > 0) {
-                    if (isWorkingDay(currentDate)) {
-                        remainingDays--;
+                if (isRetroactive) {
+                    while (remainingDays > 0) {
+                        currentDate.setDate(currentDate.getDate() - 1);
+                        if (isWorkingDay(currentDate)) {
+                            remainingDays--;
+                        }
                     }
-                    // Only increment the date if we still need more working days
-                    if (remainingDays > 0) {
-                        currentDate.setDate(currentDate.getDate() + 1);
+                    endDate = new Date(currentDate);
+                    endDate.setHours(0, 0, 0, 0);
+                } else {
+                    while (remainingDays > 0) {
+                        if (isWorkingDay(currentDate)) {
+                            remainingDays--;
+                        }
+                        if (remainingDays > 0) {
+                            currentDate.setDate(currentDate.getDate() + 1);
+                        }
                     }
+                    endDate = new Date(currentDate);
+                    endDate.setHours(23, 59, 59, 999);
                 }
-                
-                // Now set the end date to the last working day
-                endDate = new Date(currentDate);
             }
             
-            result.appliedRules.push(`Article 3(2)(b): ${periodValue} working days calculated`);
-            result.explanation.push(`According to Article 3(2)(b), a period expressed in working days excludes holidays and weekends. The period ends at ${endDate.toLocaleString()}.`);
+            result.appliedRules.push(`Article 3(2)(b): ${absolutePeriodValue} working days ${isRetroactive ? 'retroactive ' : ''}calculated`);
+            result.explanation.push(`According to Article 3(2)(b), a period expressed in working days excludes holidays and weekends. ${isRetroactive ? 'Counting backwards, the' : 'The'} period ends at ${endDate.toLocaleString()}.`);
         } else {
-            // For calendar days, we need to add (periodValue - 1) days to the start date
-            // This ensures that a 1-day period is exactly 1 day long
-            endDate.setDate(endDate.getDate() + periodValue - 1);
-            result.appliedRules.push(`Article 3(2)(b): ${periodValue} calendar days calculated`);
-            result.explanation.push(`According to Article 3(2)(b), a period expressed in days runs from the start date to the same date on the last day of the period. The period ends at ${endDate.toLocaleDateString()}.`);
+            if (isRetroactive) {
+                endDate.setDate(endDate.getDate() - absolutePeriodValue + 1);
+                endDate.setHours(0, 0, 0, 0);
+            } else {
+                endDate.setDate(endDate.getDate() + absolutePeriodValue - 1);
+                endDate.setHours(23, 59, 59, 999);
+            }
+            result.appliedRules.push(`Article 3(2)(b): ${absolutePeriodValue} calendar days ${isRetroactive ? 'retroactive ' : ''}calculated`);
+            result.explanation.push(`According to Article 3(2)(b), ${isRetroactive ? 'counting backwards, the' : 'the'} period ends at ${endDate.toLocaleDateString()}.`);
         }
-        
-        // Set the end time to 23:59:59.999 for all day-based periods
-        endDate.setHours(23, 59, 59, 999);
     } else {
-        // Weeks, months, years
-        const originalDate = endDate.getDate();
-        if (periodType === 'weeks') {
-            endDate.setDate(endDate.getDate() + (periodValue * 7) - 1);
-            result.explanation.push(`According to Article 3(2)(c), a period expressed in weeks runs from the start date to the same day of the week on the last week of the period. The period ends at ${endDate.toLocaleDateString()}.`);
-        } else if (periodType === 'months') {
-            endDate.setMonth(endDate.getMonth() + periodValue);
-            endDate.setDate(endDate.getDate() - 1);
-            result.explanation.push(`According to Article 3(2)(c), a period expressed in months runs from the start date to the same date on the last month of the period. The period ends at ${endDate.toLocaleDateString()}.`);
-        } else if (periodType === 'years') {
-            endDate.setFullYear(endDate.getFullYear() + periodValue);
-            endDate.setDate(endDate.getDate() - 1);
-            result.explanation.push(`According to Article 3(2)(c), a period expressed in years runs from the start date to the same date on the last year of the period. The period ends at ${endDate.toLocaleDateString()}.`);
+        if (isRetroactive) {
+            if (periodType === 'weeks') {
+                endDate.setDate(endDate.getDate() - (absolutePeriodValue * 7) + 1);
+                endDate.setHours(0, 0, 0, 0);
+            } else if (periodType === 'months') {
+                endDate.setMonth(endDate.getMonth() - absolutePeriodValue);
+                endDate.setHours(0, 0, 0, 0);
+            } else if (periodType === 'years') {
+                endDate.setFullYear(endDate.getFullYear() - absolutePeriodValue);
+                endDate.setHours(0, 0, 0, 0);
+            }
+        } else {
+            if (periodType === 'weeks') {
+                endDate.setDate(endDate.getDate() + (absolutePeriodValue * 7) - 1);
+            } else if (periodType === 'months') {
+                endDate.setMonth(endDate.getMonth() + absolutePeriodValue);
+                endDate.setDate(endDate.getDate() - 1);
+            } else if (periodType === 'years') {
+                endDate.setFullYear(endDate.getFullYear() + absolutePeriodValue);
+                endDate.setDate(endDate.getDate() - 1);
+            }
+            endDate.setHours(23, 59, 59, 999);
         }
-        endDate.setHours(23, 59, 59, 999);
-        result.appliedRules.push(`Article 3(2)(c): ${periodValue} ${periodType} calculated`);
+        result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} ${periodType} ${isRetroactive ? 'retroactive ' : ''}calculated`);
+        result.explanation.push(`According to Article 3(2)(c), ${isRetroactive ? 'counting backwards, the' : 'the'} period ends at ${endDate.toLocaleDateString()}.`);
     }
     
     result.initialEndDate = new Date(endDate);
@@ -180,8 +218,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     // Apply Article 3(4) - Extend to next working day if needed
     // Only apply if:
     // 1. Period is not in hours
-    // 2. End date falls on weekend or holiday
-    if (periodType !== 'hours' && !isWorkingDay(endDate)) {
+    // 2. Not a retroactive period (explicitly mentioned in the regulation)
+    // 3. End date falls on weekend or holiday
+    if (periodType !== 'hours' && !isRetroactive && !isWorkingDay(endDate)) {
         const nextWorkDay = findNextWorkingDay(endDate);
         nextWorkDay.setHours(23, 59, 59, 999);
         result.finalEndDate = nextWorkDay;
@@ -196,9 +235,54 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         if (periodType === 'hours') {
             result.appliedRules.push('Article 3(4): Not applied - period expressed in hours');
             result.explanation.push(`Article 3(4) does not apply because the period is expressed in hours.`);
+        } else if (isRetroactive) {
+            result.appliedRules.push('Article 3(4): Not applied - retroactive period');
+            result.explanation.push(`Article 3(4) does not apply because this is a retroactive period, as explicitly stated in the regulation.`);
         } else {
             result.appliedRules.push('Article 3(4): Not applied - end date is already a working day');
             result.explanation.push(`Article 3(4) does not apply because the period ends on a working day (${endDate.toLocaleDateString()}).`);
+        }
+    }
+
+    // Apply Article 3(5) - Ensure at least two working days for periods of 2+ days
+    if (periodType !== 'hours' && absolutePeriodValue >= 2) {
+        let workingDaysCount = 0;
+        let currentDate = new Date(Math.min(startDate.getTime(), endDate.getTime()));
+        const endDateToCheck = new Date(Math.max(startDate.getTime(), endDate.getTime()));
+        
+        while (currentDate <= endDateToCheck) {
+            if (isWorkingDay(currentDate)) {
+                workingDaysCount++;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        if (workingDaysCount < 2) {
+            if (isRetroactive) {
+                // For retroactive periods, we need to extend backwards
+                let currentDate = new Date(endDate);
+                while (workingDaysCount < 2) {
+                    currentDate.setDate(currentDate.getDate() - 1);
+                    if (isWorkingDay(currentDate)) {
+                        workingDaysCount++;
+                        if (workingDaysCount === 2) {
+                            currentDate.setHours(0, 0, 0, 0);
+                            result.finalEndDate = currentDate;
+                        }
+                    }
+                }
+            } else {
+                // For forward periods, extend forward
+                let nextWorkDay = findNextWorkingDay(endDate);
+                nextWorkDay.setHours(23, 59, 59, 999);
+                result.finalEndDate = nextWorkDay;
+            }
+            result.appliedRules.push(
+                'Article 3(5): Period extended to ensure at least two working days',
+                `- Original end date: ${endDate.toLocaleString()}`,
+                `- Extended to: ${result.finalEndDate.toLocaleString()}`
+            );
+            result.explanation.push(`According to Article 3(5), since the period of ${absolutePeriodValue} ${periodType} included less than two working days, it has been ${isRetroactive ? 'extended backwards' : 'extended forwards'} to ${result.finalEndDate.toLocaleDateString()} to ensure at least two working days are included.`);
         }
     }
 
