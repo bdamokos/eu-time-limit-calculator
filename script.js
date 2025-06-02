@@ -189,21 +189,65 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} weeks ${isRetroactive ? 'retroactive ' : ''}calculated`);
     } else if (periodType === 'months') {
         if (isRetroactive) {
+            // For retroactive calculation, subtract months and handle overflow
+            const originalDay = endDate.getDate();
             endDate.setMonth(endDate.getMonth() - absolutePeriodValue);
+            
+            // If the original day doesn't exist in the target month, JavaScript will overflow
+            // We need to adjust to the last day of the intended month according to Article 3(2)(c)
+            const targetMonth = endDate.getMonth();
+            if (endDate.getDate() !== originalDay) {
+                // Overflow occurred, set to last day of target month
+                endDate.setDate(0); // This sets to last day of previous month (which is our target month)
+            }
             endDate.setHours(0, 0, 0, 0);
         } else {
+            // For forward calculation, add months and handle overflow according to Article 3(2)(c)
+            const originalDay = endDate.getDate();
+            const targetMonth = (endDate.getMonth() + absolutePeriodValue) % 12;
+            const targetYear = endDate.getFullYear() + Math.floor((endDate.getMonth() + absolutePeriodValue) / 12);
+            
             endDate.setMonth(endDate.getMonth() + absolutePeriodValue);
-            endDate.setDate(endDate.getDate() - 1);
+            
+            // Check if overflow occurred (JavaScript automatically rolls to next month if day doesn't exist)
+            if (endDate.getMonth() !== targetMonth || endDate.getFullYear() !== targetYear) {
+                // Overflow occurred - set to last day of intended target month per Article 3(2)(c)
+                endDate.setFullYear(targetYear);
+                endDate.setMonth(targetMonth + 1, 0); // Set to last day of target month
+            }
+            
+            // Article 3(2)(c): Period ends on the same date as the day from which it runs
+            // No subtraction needed - the end date is the target date itself
             endDate.setHours(23, 59, 59, 999);
         }
         result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} months ${isRetroactive ? 'retroactive ' : ''}calculated`);
     } else if (periodType === 'years') {
         if (isRetroactive) {
+            // For retroactive calculation, subtract years and handle overflow (e.g., Feb 29 in non-leap year)
+            const originalDay = endDate.getDate();
+            const originalMonth = endDate.getMonth();
             endDate.setFullYear(endDate.getFullYear() - absolutePeriodValue);
+            
+            // If the original day doesn't exist in the target year (e.g., Feb 29 in non-leap year)
+            if (endDate.getDate() !== originalDay || endDate.getMonth() !== originalMonth) {
+                // Overflow occurred, set to last day of intended month per Article 3(2)(c)
+                endDate.setMonth(originalMonth + 1, 0); // Set to last day of target month
+            }
             endDate.setHours(0, 0, 0, 0);
         } else {
+            // For forward calculation, add years and handle overflow according to Article 3(2)(c)
+            const originalDay = endDate.getDate();
+            const originalMonth = endDate.getMonth();
             endDate.setFullYear(endDate.getFullYear() + absolutePeriodValue);
-            endDate.setDate(endDate.getDate() - 1);
+            
+            // Check if overflow occurred (e.g., Feb 29 to non-leap year)
+            if (endDate.getDate() !== originalDay || endDate.getMonth() !== originalMonth) {
+                // Overflow occurred - set to last day of intended month in target year per Article 3(2)(c)
+                endDate.setMonth(originalMonth + 1, 0); // Set to last day of target month
+            }
+            
+            // Article 3(2)(c): Period ends on the same date as the day from which it runs
+            // No subtraction needed - the end date is the target date itself
             endDate.setHours(23, 59, 59, 999);
         }
         result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} years ${isRetroactive ? 'retroactive ' : ''}calculated`);
