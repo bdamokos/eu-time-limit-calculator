@@ -1,173 +1,94 @@
-/**
- * Test suite for the period calculation implementation
- * 
- * To run the tests:
- * 1. Open a terminal
- * 2. Navigate to the project directory
- * 3. Run: node test_all.js
- * 
- * The tests will verify all aspects of the period calculation:
- * - Article 3(1): Skip event hour/day
- * - Article 3(2): Period calculation (working days and calendar days)
- * - Article 3(3): Holidays and weekends handling
- * - Article 3(4): Extension to next working day
- * - Article 3(5): Ensuring at least two working days in periods of two days or more
- * 
- * Each test will output its results to the console, showing:
- * - The test scenario being run
- * - The explanation of how the period was calculated
- * - The final end date of the period
- */
-
-// Test file for all articles using script.js
+const assert = require('assert');
 const { calculatePeriod } = require('./script.js');
 
-// Helper function to format dates for comparison
-function formatDate(date) {
-    return date.toISOString().split('T')[0];
+function iso(date) {
+    return date.toISOString();
 }
 
-// Helper function to format time for comparison
-function formatTime(date) {
-    return date.toTimeString().split(' ')[0];
-}
-
-// Test Article 3(1) - Skip event hour/day
+// Article 3(1) - skipping the event hour/day
 function testArticle31() {
-    console.log('\nTesting Article 3(1) - Skip event hour/day\n');
+    const hourRes = calculatePeriod(new Date('2025-04-03T14:18:30Z'), 2, 'hours');
+    assert(hourRes.appliedRules.some(r => r.startsWith('Article 3(1)')), 'Article 3(1) not applied for hours');
+    assert.strictEqual(iso(hourRes.finalEndDate), '2025-04-03T16:59:59.999Z');
 
-    // Test 1: Hours
-    console.log('Test 1: 2-hour period starting from 14:18:30');
-    const hourTest = calculatePeriod(new Date('2025-04-03T14:18:30'), 2, 'hours', false);
-    console.log('Result:', hourTest.explanation.join('\n'));
-    console.log('End Date:', hourTest.finalEndDate.toLocaleString());
-    console.log('\n');
-
-    // Test 2: Days
-    console.log('Test 2: 2-day period starting from April 3, 2025 14:18:30');
-    const dayTest = calculatePeriod(new Date('2025-04-03T14:18:30'), 2, 'days', false);
-    console.log('Result:', dayTest.explanation.join('\n'));
-    console.log('End Date:', dayTest.finalEndDate.toLocaleString());
-    console.log('\n');
+    const dayRes = calculatePeriod(new Date('2025-04-03T14:18:30Z'), 2, 'days');
+    assert(dayRes.appliedRules.some(r => r.startsWith('Article 3(1)')), 'Article 3(1) not applied for days');
+    assert.strictEqual(iso(dayRes.finalEndDate), '2025-04-07T23:59:59.999Z');
 }
 
-// Test Article 3(2) - Period calculation
+// Article 3(2) - working vs calendar days
 function testArticle32() {
-    console.log('\nTesting Article 3(2) - Period calculation\n');
+    const workRes = calculatePeriod(new Date('2025-04-03T00:00:00Z'), 2, 'working-days');
+    assert(workRes.appliedRules.some(r => r.includes('Article 3(2)')), 'Article 3(2) not applied for working days');
+    assert.strictEqual(iso(workRes.finalEndDate), '2025-04-07T23:59:59.999Z');
 
-    // Test 1: Working days
-    console.log('Test 1: 2 working days starting from April 3, 2025');
-    const workingDaysTest = calculatePeriod(new Date('2025-04-03T00:00:00'), 2, 'days', true);
-    console.log('Result:', workingDaysTest.explanation.join('\n'));
-    console.log('End Date:', workingDaysTest.finalEndDate.toLocaleString());
-    console.log('\n');
-
-    // Test 2: Calendar days
-    console.log('Test 2: 2 calendar days starting from April 3, 2025');
-    const calendarDaysTest = calculatePeriod(new Date('2025-04-03T00:00:00'), 2, 'days', false);
-    console.log('Result:', calendarDaysTest.explanation.join('\n'));
-    console.log('End Date:', calendarDaysTest.finalEndDate.toLocaleString());
-    console.log('\n');
+    const calRes = calculatePeriod(new Date('2025-04-03T00:00:00Z'), 2, 'days');
+    assert(calRes.appliedRules.some(r => r.includes('Article 3(2)')), 'Article 3(2) not applied for calendar days');
+    assert.strictEqual(iso(calRes.finalEndDate), '2025-04-07T23:59:59.999Z');
 }
 
-// Test Article 3(3) - Holidays and weekends
-function testArticle33() {
-    console.log('\nTesting Article 3(3) - Holidays and weekends\n');
+// Article 3(3) and 3(4) - holidays/weekends and extension
+function testArticle33and34() {
+    const holidayRes = calculatePeriod(new Date('2025-04-30T00:00:00Z'), 1, 'days');
+    assert(holidayRes.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) not applied on holiday');
+    assert.strictEqual(iso(holidayRes.finalEndDate), '2025-05-02T23:59:59.999Z');
 
-    // Test 1: Period ending on a holiday
-    console.log('Test 1: 1 day period ending on a holiday (May 1, 2025)');
-    const holidayTest = calculatePeriod(new Date('2025-04-30T00:00:00'), 1, 'days', false);
-    console.log('Result:', holidayTest.explanation.join('\n'));
-    console.log('End Date:', holidayTest.finalEndDate.toLocaleString());
-    console.log('\n');
-
-    // Test 2: Period ending on a weekend
-    console.log('Test 2: 1 day period ending on a weekend (April 5, 2025 - Saturday)');
-    const weekendTest = calculatePeriod(new Date('2025-04-04T00:00:00'), 1, 'days', false);
-    console.log('Result:', weekendTest.explanation.join('\n'));
-    console.log('End Date:', weekendTest.finalEndDate.toLocaleString());
-    console.log('\n');
+    const weekendRes = calculatePeriod(new Date('2025-04-04T00:00:00Z'), 1, 'days');
+    assert(weekendRes.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) not applied on weekend');
+    assert.strictEqual(iso(weekendRes.finalEndDate), '2025-04-07T23:59:59.999Z');
 }
 
-// Test Article 3(4) - Extension to next working day
-function testArticle34() {
-    console.log('\nTesting Article 3(4) - Extension to next working day\n');
-
-    // Test 1: Period ending on a holiday
-    console.log('Test 1: 1 day period ending on a holiday (May 1, 2025)');
-    const holidayTest = calculatePeriod(new Date('2025-04-30T00:00:00'), 1, 'days', false);
-    console.log('Result:', holidayTest.explanation.join('\n'));
-    console.log('End Date:', holidayTest.finalEndDate.toLocaleString());
-    console.log('\n');
-
-    // Test 2: Period ending on a weekend
-    console.log('Test 2: 1 day period ending on a weekend (April 5, 2025 - Saturday)');
-    const weekendTest = calculatePeriod(new Date('2025-04-04T00:00:00'), 1, 'days', false);
-    console.log('Result:', weekendTest.explanation.join('\n'));
-    console.log('End Date:', weekendTest.finalEndDate.toLocaleString());
-    console.log('\n');
-}
-
-// Test Article 3(5) - Ensuring at least two working days
+// Article 3(5) - ensure two working days
 function testArticle35() {
-    console.log('\nTesting Article 3(5) - Ensuring at least two working days\n');
+    const christmasRes = calculatePeriod(new Date('2024-12-24T00:00:00'), 2, 'days');
+    assert(christmasRes.appliedRules.some(r => r.includes('Article 3(5)')), 'Article 3(5) not applied for Christmas period');
+    assert.strictEqual(iso(christmasRes.finalEndDate), '2025-01-07T23:59:59.999Z');
 
-    // Test 1: 2-day period during Christmas holidays
-    console.log('Test 1: 2-day period starting from December 24, 2024');
-    const holidayTest = calculatePeriod(new Date('2024-12-24T00:00:00'), 2, 'days', false);
-    console.log('Result:', holidayTest.explanation.join('\n'));
-    console.log('End Date:', holidayTest.finalEndDate.toLocaleString());
-    console.log('Working days found:', holidayTest.workingDaysCount);
-    
-    // The period Dec 25, 2024 to Jan 6, 2025 contains only 1 working day (Jan 6)
-    // Dec 30 is incorrectly counted as a working day in the log but it's defined as a holiday
-    // The period must be extended to Jan 7, 2025 to include 2 working days
-    console.log('Extension to 2nd working day correct:', holidayTest.finalEndDate.toLocaleDateString() === '1/7/2025');
-    console.log('\n');
-
-    // Test 2: 2-day period with only one working day
-    console.log('Test 2: 2-day period starting from April 30, 2025 (May 1 is a holiday)');
-    const singleWorkDayTest = calculatePeriod(new Date('2025-04-30T00:00:00'), 2, 'days', false);
-    console.log('Result:', singleWorkDayTest.explanation.join('\n'));
-    console.log('End Date:', singleWorkDayTest.finalEndDate.toLocaleString());
-    console.log('Extension to 2nd working day correct:', singleWorkDayTest.finalEndDate.toLocaleDateString() === '5/5/2025');
-    console.log('\n');
+    const mayRes = calculatePeriod(new Date('2025-04-30T00:00:00'), 2, 'days');
+    assert(mayRes.appliedRules.some(r => r.includes('Article 3(5)')), 'Article 3(5) not applied for May period');
+    assert.strictEqual(iso(mayRes.finalEndDate), '2025-05-05T23:59:59.999Z');
 }
 
-// Test Article 3(4) and 3(5) together - Holiday period
-function testArticle34And35HolidayPeriod() {
-    console.log('\nTesting Article 3(4) and 3(5) together - Holiday period\n');
+// Article 3(4) and 3(5) together
+function testArticle34and35HolidayPeriod() {
+    const startBefore = calculatePeriod(new Date('2024-12-24T00:00:00'), 7, 'days');
+    assert.strictEqual(iso(startBefore.finalEndDate), '2025-01-07T23:59:59.999Z');
 
-    // Test 1: Period starting before Christmas, ending during holidays
-    console.log('Test 1: 7 days starting from December 24, 2024');
-    const test1 = calculatePeriod(new Date('2024-12-24T00:00:00'), 7, 'days', false);
-    console.log('Result:', test1.explanation.join('\n'));
-    console.log('End Date:', test1.finalEndDate.toLocaleString());
-    console.log('\n');
+    const startDuring = calculatePeriod(new Date('2024-12-26T00:00:00'), 5, 'days');
+    assert.strictEqual(iso(startDuring.finalEndDate), '2025-01-07T23:59:59.999Z');
 
-    // Test 2: Period starting during Christmas, ending during holidays
-    console.log('Test 2: 5 days starting from December 26, 2024');
-    const test2 = calculatePeriod(new Date('2024-12-26T00:00:00'), 5, 'days', false);
-    console.log('Result:', test2.explanation.join('\n'));
-    console.log('End Date:', test2.finalEndDate.toLocaleString());
-    console.log('\n');
-
-    // Test 3: Period starting after New Year, ending during holidays
-    console.log('Test 3: 3 days starting from January 2, 2025');
-    const test3 = calculatePeriod(new Date('2025-01-02T00:00:00'), 3, 'days', false);
-    console.log('Result:', test3.explanation.join('\n'));
-    console.log('End Date:', test3.finalEndDate.toLocaleString());
-    console.log('Expected End Date: 2025-01-07T23:59:59.999Z');
-    console.log('Extension to 2nd working day correct:', test3.finalEndDate.toLocaleDateString() === '1/7/2025');
-    console.log('\n');
+    const startAfter = calculatePeriod(new Date('2025-01-02T00:00:00'), 3, 'days');
+    assert.strictEqual(iso(startAfter.finalEndDate), '2025-01-07T23:59:59.999Z');
 }
 
-// Run all tests
-console.log('Starting tests...\n');
-testArticle31();
-testArticle32();
-testArticle33();
-testArticle34();
-testArticle35();
-testArticle34And35HolidayPeriod();
-console.log('All tests completed.'); 
+console.log('Running tests...');
+
+const tests = [
+    { name: 'Article 3(1)', fn: testArticle31 },
+    { name: 'Article 3(2)', fn: testArticle32 },
+    { name: 'Article 3(3) and 3(4)', fn: testArticle33and34 },
+    { name: 'Article 3(5)', fn: testArticle35 },
+    { name: 'Article 3(4) and 3(5) together', fn: testArticle34and35HolidayPeriod }
+];
+
+const failures = [];
+
+for (const test of tests) {
+    try {
+        test.fn();
+        console.log(`✅ ${test.name} passed`);
+    } catch (err) {
+        console.log(`❌ ${test.name} failed: ${err.message}`);
+        failures.push({ name: test.name, error: err.message });
+    }
+}
+
+if (failures.length === 0) {
+    console.log('\n🎉 All tests passed!');
+} else {
+    console.log(`\n💥 ${failures.length} test(s) failed:`);
+    failures.forEach(failure => {
+        console.log(`  - ${failure.name}: ${failure.error}`);
+    });
+    process.exit(1);
+}
