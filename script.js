@@ -89,6 +89,81 @@ function findNextWorkingDay(date) {
     return nextDay;
 }
 
+// Default date format
+let dateFormat = 'dmy-text';
+
+function getCookie(name) {
+    if (typeof document === 'undefined') return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+function setCookie(name, value, days) {
+    if (typeof document === 'undefined') return;
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/`;
+}
+
+if (typeof document !== 'undefined') {
+    const saved = getCookie('dateFormat');
+    if (saved) {
+        // Handle legacy format codes
+        if (saved === 'dmy') {
+            dateFormat = 'dmy-text';
+        } else if (saved === 'mdy') {
+            dateFormat = 'mdy-slash';
+        } else {
+            dateFormat = saved;
+        }
+    }
+}
+
+function formatDate(date) {
+    switch (dateFormat) {
+        case 'mdy-slash':
+            return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
+        case 'dmy-slash':
+            return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        case 'iso':
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        case 'long':
+            return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+        case 'dmy':
+        case 'dmy-text':
+        default:
+            return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+}
+
+function formatDateTime(date) {
+    const timeStr = date.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    const dateStr = formatDate(date);
+    return dateFormat === 'iso' ? `${dateStr} ${timeStr}` : `${dateStr}, ${timeStr}`;
+}
+
+function updateEventDateDisplay() {
+    const input = document.getElementById('eventDate');
+    const preview = document.getElementById('eventDateFormatted');
+    if (!input || !preview || !input.value) {
+        if (preview) preview.textContent = '';
+        return;
+    }
+    const date = new Date(input.value);
+    if (!isNaN(date)) {
+        preview.textContent = formatDate(date);
+    } else {
+        preview.textContent = '';
+    }
+}
+
 // Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
 function calculatePeriod(eventDateTime, periodValue, periodType) {
     const result = {
@@ -122,12 +197,12 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         if (isRetroactive) {
             startDate.setHours(0, 0, 0, 0);
             result.appliedRules.push('Article 3(1): Day of event not counted, starting from beginning of current day for retroactive calculation');
-            result.explanation.push(`According to Article 3(1), for retroactive calculation, the day of the event (${eventDateTime.toLocaleDateString()}) is not counted. The period starts from the beginning of the current day and counts backwards.`);
+            result.explanation.push(`According to Article 3(1), for retroactive calculation, the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the beginning of the current day and counts backwards.`);
         } else {
             startDate.setDate(startDate.getDate() + 1);
             startDate.setHours(0, 0, 0, 0);
             result.appliedRules.push('Article 3(1): Day of event not counted, starting from next day');
-            result.explanation.push(`According to Article 3(1), the day of the event (${eventDateTime.toLocaleDateString()}) is not counted. The period starts from the next day (${startDate.toLocaleDateString()}).`);
+            result.explanation.push(`According to Article 3(1), the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the next day (${formatDate(startDate)}).`);
         }
     }
 
@@ -262,8 +337,8 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         endDate = nextWorkDay;
         result.appliedRules.push(
             'Article 3(4): End date falls on non-working day, extended to next working day',
-            `- Previous end date: ${result.initialEndDate.toLocaleString()}`,
-            `- Extended to: ${endDate.toLocaleString()}`
+            `- Previous end date: ${formatDateTime(result.initialEndDate)}`,
+            `- Extended to: ${formatDateTime(endDate)}`
         );
     }
 
@@ -277,13 +352,13 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         endDateCopy.setHours(23, 59, 59, 999);
         
         // Log the period for debugging
-        console.log(`Checking working days from ${currentDate.toLocaleDateString()} to ${endDateCopy.toLocaleDateString()}`);
+        console.log(`Checking working days from ${formatDate(currentDate)} to ${formatDate(endDateCopy)}`);
         
         // First, count working days in the original period
         while (currentDate <= endDateCopy) {
             if (isWorkingDay(currentDate)) {
                 workingDays++;
-                console.log(`Found working day: ${currentDate.toLocaleDateString()}`);
+                console.log(`Found working day: ${formatDate(currentDate)}`);
             }
             currentDate.setDate(currentDate.getDate() + 1);
         }
@@ -310,7 +385,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 while (currentDate <= endDateCopy) {
                     if (isWorkingDay(currentDate)) {
                         workingDays++;
-                        console.log(`Found working day in backward extended period: ${currentDate.toLocaleDateString()}`);
+                        console.log(`Found working day in backward extended period: ${formatDate(currentDate)}`);
                     }
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
@@ -321,10 +396,10 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                     startDate = prevWorkDay;
                     result.appliedRules.push(
                         'Article 3(5): Period extended backward to ensure at least two working days',
-                        `- Original start date: ${result.initialEndDate.toLocaleString()}`,
-                        `- Extended to: ${startDate.toLocaleDateString()}`
+                        `- Original start date: ${formatDateTime(result.initialEndDate)}`,
+                        `- Extended to: ${formatDate(startDate)}`
                     );
-                    result.explanation.push(`According to Article 3(5), any period of two days or more must include at least two working days. The period only included ${result.workingDaysCount} working day${result.workingDaysCount === 1 ? '' : 's'}, so it has been extended backward to ${startDate.toLocaleDateString()} to ensure at least two working days are included.`);
+                    result.explanation.push(`According to Article 3(5), any period of two days or more must include at least two working days. The period only included ${result.workingDaysCount} working day${result.workingDaysCount === 1 ? '' : 's'}, so it has been extended backward to ${formatDate(startDate)} to ensure at least two working days are included.`);
                 }
             } else {
                 // For forward periods, extend forward to include at least two working days total
@@ -340,7 +415,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 while (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
                     if (isWorkingDay(currentWorkDay)) {
                         foundAdditionalWorkingDays++;
-                        console.log(`Found additional working day: ${currentWorkDay.toLocaleDateString()}`);
+                        console.log(`Found additional working day: ${formatDate(currentWorkDay)}`);
                     }
                     
                     if (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
@@ -353,10 +428,10 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 
                 result.appliedRules.push(
                     'Article 3(5): Period extended forward to ensure at least two working days',
-                    `- Original end date: ${result.initialEndDate.toLocaleString()}`,
-                    `- Extended to: ${endDate.toLocaleString()}`
+                    `- Original end date: ${formatDateTime(result.initialEndDate)}`,
+                    `- Extended to: ${formatDateTime(endDate)}`
                 );
-                result.explanation.push(`According to Article 3(5), any period of two days or more must include at least two working days. The period only included ${result.workingDaysCount} working day${result.workingDaysCount === 1 ? '' : 's'}, so it has been extended forward to ${endDate.toLocaleDateString()} to ensure at least two working days are included.`);
+                result.explanation.push(`According to Article 3(5), any period of two days or more must include at least two working days. The period only included ${result.workingDaysCount} working day${result.workingDaysCount === 1 ? '' : 's'}, so it has been extended forward to ${formatDate(endDate)} to ensure at least two working days are included.`);
             }
         }
     }
@@ -553,7 +628,7 @@ function formatResult(result) {
     let output = '<div class="result-container">';
     
     // Add the final end date
-    output += `<div class="result-date">End Date: ${result.finalEndDate.toLocaleString()}</div>`;
+    output += `<div class="result-date">End Date: ${formatDateTime(result.finalEndDate)}</div>`;
     
     // Add explanation
     output += '<div class="result-explanation">';
@@ -569,13 +644,13 @@ function formatResult(result) {
     
     // Step 2: Explain initial end date calculation
     if (result.initialEndDate) {
-        const initialDateStr = result.initialEndDate.toLocaleDateString();
+        const initialDateStr = formatDate(result.initialEndDate);
         const endDateBeforeArt35 = article34Applied ? 
-            result.appliedRules.find(rule => rule.includes('Extended to:'))?.split('Extended to: ')[1] : 
-            result.initialEndDate.toLocaleString();
+            result.appliedRules.find(rule => rule.includes('Extended to:'))?.split('Extended to: ')[1] :
+            formatDateTime(result.initialEndDate);
         
         if (article34Applied) {
-            output += `<br>The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${new Date(endDateBeforeArt35).toLocaleDateString()}).`;
+            output += `<br>The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${formatDate(new Date(endDateBeforeArt35))}).`;
         }
     }
     
@@ -638,6 +713,9 @@ if (typeof module !== 'undefined' && module.exports) {
         const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         eventDateInput.value = `${year}-${month}-${day}`;
+        updateEventDateDisplay();
+        eventDateInput.addEventListener('change', updateEventDateDisplay);
+        eventDateInput.addEventListener('input', updateEventDateDisplay);
         
         // Add event listener to period type select to toggle time input requirement
         const periodTypeSelect = document.getElementById('periodType');
@@ -673,6 +751,34 @@ if (typeof module !== 'undefined' && module.exports) {
                 updateCalculation();
             });
         });
+
+        // Settings panel handling
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const dateFormatSelect = document.getElementById('dateFormatSelect');
+
+        if (dateFormatSelect) {
+            dateFormatSelect.value = dateFormat;
+            dateFormatSelect.addEventListener('change', function() {
+                dateFormat = this.value;
+                setCookie('dateFormat', dateFormat, 365);
+                updateEventDateDisplay();
+                updateCalculation();
+            });
+        }
+
+        if (settingsBtn && settingsPanel) {
+            settingsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                settingsPanel.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+                    settingsPanel.classList.remove('show');
+                }
+            });
+        }
 
         // Initial calculation
         updateCalculation();

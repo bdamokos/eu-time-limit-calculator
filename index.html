@@ -63,6 +63,35 @@
         button:hover {
             background-color: #1557b0;
         }
+        .settings-container {
+            position: relative;
+        }
+        .settings-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .settings-panel {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+            min-width: 220px;
+        }
+        .settings-panel.show {
+            display: block;
+        }
+        .date-preview {
+            margin-left: 8px;
+            font-size: 14px;
+            color: #555;
+        }
         .result-container {
             margin-top: 30px;
             padding: 20px;
@@ -127,7 +156,22 @@
 </head>
 <body>
     <div class="container">
-        <h1>EU Regulation 1182/71 Date Calculator</h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h1>EU Regulation 1182/71 Date Calculator</h1>
+            <div class="settings-container">
+                <button id="settings-btn" class="settings-btn" aria-label="Settings">⚙️</button>
+                <div id="settings-panel" class="settings-panel">
+                    <label for="dateFormatSelect">Date Format:</label>
+                    <select id="dateFormatSelect">
+                        <option value="dmy-text">31 Dec 2024</option>
+                        <option value="iso">2024-12-31</option>
+                        <option value="dmy-slash">31/12/2024 (DD/MM/YYYY)</option>
+                        <option value="mdy-slash">12/31/2024 (MM/DD/YYYY)</option>
+                        <option value="long">December 31, 2024</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         
         <form id="periodForm">
             <div class="form-group">
