@@ -167,6 +167,7 @@ function updateEventDateDisplay() {
 // Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
 function calculatePeriod(eventDateTime, periodValue, periodType) {
     const result = {
+        eventDate: new Date(eventDateTime),
         startDate: null,
         initialEndDate: null,
         finalEndDate: null,
@@ -457,6 +458,10 @@ function renderCalendar(result) {
             <span>End Date</span>
         </div>
         <div class="legend-item">
+            <div class="legend-color" style="background-color: #f3e5f5; border: 1px dashed #9c27b0;"></div>
+            <span>Event Date</span>
+        </div>
+        <div class="legend-item">
             <div class="legend-color" style="background-color: #e8f0fe;"></div>
             <span>Working Day</span>
         </div>
@@ -595,6 +600,9 @@ function renderMonthCalendar(date, result, container) {
                 if (isSameDay(currentDate, result.finalEndDate)) {
                     dayElement.classList.add('end-date');
                 }
+                if (isSameDay(currentDate, result.eventDate)) {
+                    dayElement.classList.add('event-date');
+                }
 
                 // Mark extension days - need to handle both forward and retroactive cases
                 if (result.initialEndDate) {
@@ -626,7 +634,10 @@ function isSameDay(date1, date2) {
 // Update the formatResult function to return the HTML string
 function formatResult(result) {
     let output = '<div class="result-container">';
-    
+
+
+
+
     // Add the final end date
     output += `<div class="result-date">End Date: ${formatDateTime(result.finalEndDate)}</div>`;
     

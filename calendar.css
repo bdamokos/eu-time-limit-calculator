@@ -76,6 +76,12 @@
     color: white;
 }
 
+.calendar-day.event-date {
+    background-color: #f3e5f5;
+    border: 1px dashed #9c27b0;
+    color: #9c27b0;
+}
+
 .calendar-day.end-date {
     background-color: #1557b0;
     color: white;
