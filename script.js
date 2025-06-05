@@ -401,6 +401,10 @@ function renderCalendar(result) {
             <div class="legend-color" style="border: 1px dashed #1a73e8;"></div>
             <span>Extension</span>
         </div>
+        <div class="legend-item">
+            <div class="legend-color" style="border: 2px solid #dc3545;"></div>
+            <span>Today</span>
+        </div>
     `;
     container.appendChild(legend);
 
@@ -454,6 +458,9 @@ function renderMonthCalendar(date, result, container) {
     });
     calendar.appendChild(header);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     // Get first day of month and last day of month
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
@@ -490,6 +497,10 @@ function renderMonthCalendar(date, result, container) {
                 }
                 if (isWorkingDay(currentDate)) {
                     dayElement.classList.add('working-day');
+                }
+
+                if (isSameDay(currentDate, today)) {
+                    dayElement.classList.add('today');
                 }
 
                 // For retroactive calculations, we need to check if the date is between end and start
