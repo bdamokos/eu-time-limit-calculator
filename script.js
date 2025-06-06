@@ -181,7 +181,6 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
     // Step 1: Apply Article 3(1) - Skip the event hour/day
     let startDate = new Date(eventDateTime);
-    result.startDate = new Date(startDate); // Store the start date
     
     if (periodType === 'hours') {
         startDate.setMinutes(0, 0, 0);
@@ -206,6 +205,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             result.explanation.push(`According to Article 3(1), the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the next day (${formatDate(startDate)}).`);
         }
     }
+
+    // Store the actual start date after applying Article 3(1)
+    result.startDate = new Date(startDate);
 
     // Step 2: Apply Article 3(2) - Calculate the period
     let endDate = new Date(startDate);
@@ -451,11 +453,11 @@ function renderCalendar(result) {
     legend.innerHTML = `
         <div class="legend-item">
             <div class="legend-color" style="background-color: #1a73e8;"></div>
-            <span>Start Date</span>
+            <span>Start of period</span>
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background-color: #1557b0;"></div>
-            <span>End Date</span>
+            <span>End of period</span>
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background-color: #f3e5f5; border: 1px dashed #9c27b0;"></div>
@@ -470,7 +472,7 @@ function renderCalendar(result) {
             <span>Holiday</span>
         </div>
         <div class="legend-item">
-            <div class="legend-color" style="background-color: #f8f9fa;"></div>
+            <div class="legend-color" style="background-color: #f8f9fa; border: 1px solid #dee2e6;"></div>
             <span>Weekend</span>
         </div>
         <div class="legend-item">
