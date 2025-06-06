@@ -1,5 +1,8 @@
+// Set timezone to UTC for consistent testing
+process.env.TZ = 'UTC';
+
 const assert = require('assert');
-const { calculatePeriod } = require('./script.js');
+const { calculatePeriod, setHolidaySystem, getHolidaySystem, holidayData } = require('./script.js');
 
 function iso(date) {
     return date.toISOString();
@@ -61,6 +64,94 @@ function testArticle34and35HolidayPeriod() {
     assert.strictEqual(iso(startAfter.finalEndDate), '2025-01-07T23:59:59.999Z');
 }
 
+// Test country-specific holidays affect calculations
+function testCountrySpecificHolidays() {
+    // Test case 1: January 6 (Epiphany) - Holiday in Austria but not in Germany
+    // Period ending on January 6, 2025 should be extended in Austria but not in Germany
+    
+    // Austria: January 6 is a holiday, so period should extend past Jan 6 holiday and then be extended by Article 3(5)
+    setHolidaySystem('AT');
+    const austriaRes = calculatePeriod(new Date('2025-01-03T00:00:00'), 3, 'days');
+    // Jan 3 -> start Jan 4, period: Jan 4 (Sat), 5 (Sun), 6 (Mon, holiday) -> ends Jan 6 (holiday) -> extended to Jan 7 by Art 3(4) -> extended to Jan 8 by Art 3(5)
+    assert(austriaRes.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should be applied in Austria for Jan 6 holiday');
+    assert(austriaRes.appliedRules.some(r => r.includes('Article 3(5)')), 'Article 3(5) should be applied in Austria to ensure 2 working days');
+    assert.strictEqual(iso(austriaRes.finalEndDate), '2025-01-08T23:59:59.999Z', 'Austria should extend to Jan 8 to ensure 2 working days');
+    
+    // Germany: January 6 is NOT a holiday, but period still needs to be extended by Article 3(5)
+    setHolidaySystem('DE');
+    const germanyRes = calculatePeriod(new Date('2025-01-03T00:00:00'), 3, 'days');
+    // Jan 3 -> start Jan 4, period: Jan 4 (Sat), 5 (Sun), 6 (Mon, working day) -> only 1 working day -> extended to Jan 7 by Art 3(5)
+    assert(!germanyRes.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should NOT be applied in Germany for Jan 6');
+    assert(germanyRes.appliedRules.some(r => r.includes('Article 3(5)')), 'Article 3(5) should be applied in Germany to ensure 2 working days');
+    assert.strictEqual(iso(germanyRes.finalEndDate), '2025-01-07T23:59:59.999Z', 'Germany should extend to Jan 7 to ensure 2 working days');
+    
+    console.log(`  ✓ Austria extends Jan 6 period to Jan 8 (holiday + Art 3(5)), Germany extends to Jan 7 (Art 3(5))`);
+}
+
+function testBulgarianSpecificHoliday() {
+    // Test case 2: March 3 (Liberation Day) - Holiday in Bulgaria but not in most other countries
+    // Period ending on March 3, 2025 should be extended in Bulgaria but not in Germany
+    
+    // Bulgaria: March 3 is Liberation Day (holiday)
+    setHolidaySystem('BG');
+    const bulgariaRes = calculatePeriod(new Date('2025-02-28T00:00:00'), 3, 'days');
+    // Feb 28 -> start Mar 1, period: Mar 1 (Sat), 2 (Sun), 3 (Mon, holiday) -> ends Mar 3 (holiday) -> extended to Mar 4 by Art 3(4) -> extended to Mar 5 by Art 3(5)
+    assert(bulgariaRes.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should be applied in Bulgaria for Mar 3 holiday');
+    assert(bulgariaRes.appliedRules.some(r => r.includes('Article 3(5)')), 'Article 3(5) should be applied in Bulgaria to ensure 2 working days');
+    assert.strictEqual(iso(bulgariaRes.finalEndDate), '2025-03-05T23:59:59.999Z', 'Bulgaria should extend to Mar 5 to ensure 2 working days');
+    
+    // Germany: March 3 is NOT a holiday, but period still needs to be extended by Article 3(5)
+    setHolidaySystem('DE');
+    const germanyRes = calculatePeriod(new Date('2025-02-28T00:00:00'), 3, 'days');
+    // Feb 28 -> start Mar 1, period: Mar 1 (Sat), 2 (Sun), 3 (Mon, working day) -> only 1 working day -> extended to Mar 4 by Art 3(5)
+    assert(!germanyRes.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should NOT be applied in Germany for Mar 3');
+    assert(germanyRes.appliedRules.some(r => r.includes('Article 3(5)')), 'Article 3(5) should be applied in Germany to ensure 2 working days');
+    assert.strictEqual(iso(germanyRes.finalEndDate), '2025-03-04T23:59:59.999Z', 'Germany should extend to Mar 4 to ensure 2 working days');
+    
+    console.log(`  ✓ Bulgaria extends Mar 3 period to Mar 5 (holiday + Art 3(5)), Germany extends to Mar 4 (Art 3(5))`);
+}
+
+function testEuropeanInstitutionsVsMemberStates() {
+    // Test case 3: European institutions vs Member States
+    // Compare European Parliament holidays with a Member State that has different holidays
+    
+    // European Parliament holidays include more office closing days in December
+    setHolidaySystem('EP');
+    const epRes = calculatePeriod(new Date('2025-12-22T00:00:00'), 3, 'days');
+    // Dec 22 -> start Dec 23, period should account for EP office closing days 24-31
+    
+    // France has fewer December holidays than EP
+    setHolidaySystem('FR');
+    const franceRes = calculatePeriod(new Date('2025-12-22T00:00:00'), 3, 'days');
+    
+    // The end dates should be different due to different holiday calendars
+    assert.notStrictEqual(iso(epRes.finalEndDate), iso(franceRes.finalEndDate), 
+        'European Parliament and France should have different results due to different December holidays');
+    
+    console.log(`  ✓ European Parliament: ${iso(epRes.finalEndDate).slice(0,10)}, France: ${iso(franceRes.finalEndDate).slice(0,10)} (different December holidays)`);
+}
+
+function testWorkingDaysWithDifferentHolidays() {
+    // Test case 4: Working days calculation with different holiday systems
+    // A period that includes a country-specific holiday should have different working day counts
+    
+    // Set to European Parliament (default)
+    setHolidaySystem('EP');
+    const epWorkingDays = calculatePeriod(new Date('2025-01-02T00:00:00'), 5, 'working-days');
+    
+    // Set to Austria (has Jan 6 as holiday, EP doesn't have Jan 6 in 2025)
+    setHolidaySystem('AT');
+    const austriaWorkingDays = calculatePeriod(new Date('2025-01-02T00:00:00'), 5, 'working-days');
+    
+    // Both should end on the same date because they both find exactly 5 working days ending on Jan 10
+    // EP: Jan 6, 7, 8, 9, 10 (Jan 6 is not a holiday for EP)
+    // Austria: Jan 3, 7, 8, 9, 10 (Jan 6 is a holiday for Austria, so Jan 3 is counted instead)
+    assert.strictEqual(iso(epWorkingDays.finalEndDate), iso(austriaWorkingDays.finalEndDate), 
+        'EP and Austria should have the same end date when calculating 5 working days, despite different holiday calendars');
+    
+    console.log(`  ✓ Working days: EP ends ${iso(epWorkingDays.finalEndDate).slice(0,10)}, Austria ends ${iso(austriaWorkingDays.finalEndDate).slice(0,10)}`);
+}
+
 console.log('Running tests...');
 
 const tests = [
@@ -68,7 +159,11 @@ const tests = [
     { name: 'Article 3(2)', fn: testArticle32 },
     { name: 'Article 3(3) and 3(4)', fn: testArticle33and34 },
     { name: 'Article 3(5)', fn: testArticle35 },
-    { name: 'Article 3(4) and 3(5) together', fn: testArticle34and35HolidayPeriod }
+    { name: 'Article 3(4) and 3(5) together', fn: testArticle34and35HolidayPeriod },
+    { name: 'Country-specific holidays (Austria vs Germany)', fn: testCountrySpecificHolidays },
+    { name: 'Bulgarian Liberation Day vs Germany', fn: testBulgarianSpecificHoliday },
+    { name: 'European institutions vs Member States', fn: testEuropeanInstitutionsVsMemberStates },
+    { name: 'Working days with different holiday systems', fn: testWorkingDaysWithDifferentHolidays }
 ];
 
 const failures = [];
@@ -83,8 +178,17 @@ for (const test of tests) {
     }
 }
 
+// Reset to default
+setHolidaySystem('EP');
+
 if (failures.length === 0) {
     console.log('\n🎉 All tests passed!');
+    console.log('\n📊 Holiday systems tested:');
+    console.log('  - European Parliament (EP)');
+    console.log('  - Austria (AT) - has January 6 holiday');
+    console.log('  - Germany (DE) - no January 6 holiday');
+    console.log('  - Bulgaria (BG) - has March 3 Liberation Day');
+    console.log('  - France (FR) - different December holidays than EP');
 } else {
     console.log(`\n💥 ${failures.length} test(s) failed:`);
     failures.forEach(failure => {
