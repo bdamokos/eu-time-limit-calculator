@@ -1,95 +1,120 @@
-// EU holidays and office closing days for 2024-2025 (European Parliament official calendar)
-const euHolidays = [
-    // Public holidays 2024
-    '2024-01-01', // New Year's Day
-    '2024-03-29', // Good Friday
-    '2024-04-01', // Easter Monday
-    '2024-05-01', // Wednesday, Labour Day
-    '2024-05-09', // Thursday, Anniversary of the Schuman declaration / Ascension Day
-    '2024-05-20', // Whit Monday
-    '2024-08-15', // Thursday, Assumption
-    '2024-11-01', // Friday, All Saints' Day
-    
-    // Office closing days 2024
-    '2024-01-02', // Tuesday, day following New Year's Day
-    '2024-03-28', // Maundy Thursday
-    '2024-05-10', // Friday, day following Ascension Day
-    // Christmas and New Year period 2024
-    '2024-12-23',
-    '2024-12-24',
-    '2024-12-25',
-    '2024-12-26',
-    '2024-12-27',
-    '2024-12-30',
-    '2024-12-31',
-    '2025-01-01',
-    '2025-01-02',
-    '2025-01-03',
+// Holiday data organized by country/institution
+const holidayData = {
+    // EU Member States holidays for 2025 based on OJ C, C/2024/7517, 20.12.2024
+    'BE': ['2025-01-01', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-08', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25'],
+    'BG': ['2025-01-01', '2025-03-03', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-06', '2025-05-24', '2025-09-06', '2025-09-22', '2025-11-01', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'CZ': ['2025-01-01', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-07-06', '2025-09-28', '2025-10-28', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'DK': ['2025-01-01', '2025-04-17', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-29', '2025-06-08', '2025-06-09', '2025-12-25', '2025-12-26'],
+    'DE': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-10-03', '2025-12-25', '2025-12-26'],
+    'EE': ['2025-01-01', '2025-02-24', '2025-04-18', '2025-04-20', '2025-05-01', '2025-06-08', '2025-06-23', '2025-06-24', '2025-08-20', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'IE': ['2025-01-01', '2025-02-03', '2025-03-17', '2025-04-21', '2025-05-05', '2025-06-02', '2025-08-04', '2025-10-27', '2025-12-25', '2025-12-26'],
+    'EL': ['2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-10-28', '2025-12-25', '2025-12-26'],
+    'ES': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-05-01', '2025-08-15', '2025-11-01', '2025-12-06', '2025-12-08', '2025-12-25'],
+    'FR': ['2025-01-01', '2025-04-21', '2025-05-01', '2025-05-08', '2025-05-29', '2025-06-09', '2025-07-14', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25'],
+    'HR': ['2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-30', '2025-06-19', '2025-06-22', '2025-08-05', '2025-08-15', '2025-11-01', '2025-11-18', '2025-12-25', '2025-12-26'],
+    'IT': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26'],
+    'CY': ['2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-15', '2025-10-01', '2025-10-28', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'LV': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-05', '2025-06-23', '2025-06-24', '2025-11-18', '2025-12-24', '2025-12-25', '2025-12-26', '2025-12-31'],
+    'LT': ['2025-01-01', '2025-02-16', '2025-03-11', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-04', '2025-06-01', '2025-06-24', '2025-07-06', '2025-08-15', '2025-11-01', '2025-11-02', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'LU': ['2025-01-01', '2025-04-21', '2025-05-01', '2025-05-09', '2025-05-29', '2025-06-09', '2025-06-23', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26'],
+    'HU': ['2025-01-01', '2025-03-15', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-20', '2025-10-23', '2025-11-01', '2025-12-25', '2025-12-26'],
+    'MT': ['2025-01-01', '2025-02-10', '2025-03-19', '2025-03-31', '2025-04-18', '2025-05-01', '2025-06-07', '2025-06-29', '2025-08-15', '2025-09-08', '2025-09-21', '2025-12-08', '2025-12-13', '2025-12-25'],
+    'NL': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-04-26', '2025-05-05', '2025-05-29', '2025-05-30', '2025-06-09', '2025-12-25', '2025-12-26'],
+    'AT': ['2025-01-01', '2025-01-06', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-06-19', '2025-08-15', '2025-10-26', '2025-11-01', '2025-12-08', '2025-12-25', '2025-12-26'],
+    'PL': ['2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-03', '2025-06-08', '2025-06-19', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25', '2025-12-26'],
+    'PT': ['2025-01-01', '2025-04-18', '2025-04-20', '2025-04-25', '2025-05-01', '2025-06-10', '2025-06-19', '2025-08-15', '2025-10-05', '2025-11-01', '2025-12-01', '2025-12-08', '2025-12-25'],
+    'RO': ['2025-01-01', '2025-01-02', '2025-01-06', '2025-01-07', '2025-01-24', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-11-30', '2025-12-01', '2025-12-25', '2025-12-26'],
+    'SI': ['2025-01-01', '2025-01-02', '2025-02-08', '2025-04-20', '2025-04-21', '2025-04-27', '2025-05-01', '2025-05-02', '2025-06-08', '2025-06-25', '2025-08-15', '2025-10-31', '2025-11-01', '2025-12-25', '2025-12-26'],
+    'SK': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-08-29', '2025-09-15', '2025-11-01', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'FI': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-20', '2025-12-06', '2025-12-24', '2025-12-25', '2025-12-26'],
+    'SE': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-06', '2025-06-08', '2025-06-21', '2025-11-01', '2025-12-25', '2025-12-26'],
 
-    // Public holidays 2025
-    '2025-01-01', // New Year's Day
-    '2025-04-18', // Good Friday
-    '2025-04-21', // Easter Monday
-    '2025-05-01', // Labour Day
-    '2025-05-09', // Europe Day (Robert Schuman Declaration)
-    '2025-05-29', // Ascension Day
-    '2025-06-09', // Whit Monday
-    '2025-08-15', // Assumption
-    // National Days (Note: these depend on place of employment)
-    '2025-07-21', // National Day in Belgium
-    
-    // Office closing days 2025
-    '2025-01-02', // Day following New Year's Day
-    '2025-01-03', // Second day following New Year's Day
-    '2025-04-17', // Maundy Thursday
-    '2025-05-30', // Day after Ascension Day
-    // Christmas and New Year period
-    '2025-12-24',
-    '2025-12-25',
-    '2025-12-26',
-    '2025-12-27',
-    '2025-12-28',
-    '2025-12-29',
-    '2025-12-30',
-    '2025-12-31',
-    '2026-01-01',
-    '2026-01-02'
-];
+    // European Parliament holidays 2024-2025
+    'EP': [
+        // Public holidays 2024
+        '2024-01-01', // New Year's Day
+        '2024-03-29', // Good Friday
+        '2024-04-01', // Easter Monday
+        '2024-05-01', // Wednesday, Labour Day
+        '2024-05-09', // Thursday, Anniversary of the Schuman declaration / Ascension Day
+        '2024-05-20', // Whit Monday
+        '2024-08-15', // Thursday, Assumption
+        '2024-11-01', // Friday, All Saints' Day
+        
+        // Office closing days 2024
+        '2024-01-02', // Tuesday, day following New Year's Day
+        '2024-03-28', // Maundy Thursday
+        '2024-05-10', // Friday, day following Ascension Day
+        // Christmas and New Year period 2024
+        '2024-12-23',
+        '2024-12-24',
+        '2024-12-25',
+        '2024-12-26',
+        '2024-12-27',
+        '2024-12-30',
+        '2024-12-31',
+        '2025-01-01',
+        '2025-01-02',
+        '2025-01-03',
 
-function isHoliday(date) {
-    // Check if the date is valid before trying to convert it
-    if (isNaN(date.getTime())) {
-        return false; // Invalid date is not a holiday
-    }
-    
-    // Format the date as YYYY-MM-DD for comparison with the holidays array
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    
-    return euHolidays.includes(dateString);
-}
+        // Public holidays 2025
+        '2025-01-01', // New Year's Day
+        '2025-04-18', // Good Friday
+        '2025-04-21', // Easter Monday
+        '2025-05-01', // Labour Day
+        '2025-05-09', // Europe Day (Robert Schuman Declaration)
+        '2025-05-29', // Ascension Day
+        '2025-06-09', // Whit Monday
+        '2025-08-15', // Assumption
+        // National Days (Note: these depend on place of employment)
+        '2025-07-21', // National Day in Belgium
+        
+        // Office closing days 2025
+        '2025-01-02', // Day following New Year's Day
+        '2025-01-03', // Second day following New Year's Day
+        '2025-04-17', // Maundy Thursday
+        '2025-05-30', // Day after Ascension Day
+        // Christmas and New Year period
+        '2025-12-24',
+        '2025-12-25',
+        '2025-12-26',
+        '2025-12-27',
+        '2025-12-28',
+        '2025-12-29',
+        '2025-12-30',
+        '2025-12-31',
+        '2026-01-01',
+        '2026-01-02'
+    ],
 
-function isWeekend(date) {
-    const day = date.getDay();
-    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
-}
+    // European Commission holidays 2025
+    'EC': [
+        '2025-01-01', // New Year's Day
+        '2025-01-02', // Day after New Year's Day
+        '2025-04-17', // Maundy Thursday
+        '2025-04-18', // Good Friday
+        '2025-04-21', // Easter Monday
+        '2025-05-01', // Labour Day
+        '2025-05-09', // Anniversary of the Declaration by Robert Schuman in 1950
+        '2025-05-29', // Ascension Day
+        '2025-05-30', // Day after Ascension Day
+        '2025-06-09', // Whit Monday
+        '2025-06-23', // Luxembourg National Holiday (for staff serving in Luxembourg)
+        '2025-07-21', // Belgian National Holiday (for staff serving in Brussels)
+        '2025-08-15', // Assumption
+        '2025-12-24', // Christmas period
+        '2025-12-25',
+        '2025-12-26',
+        '2025-12-27',
+        '2025-12-28',
+        '2025-12-29',
+        '2025-12-30',
+        '2025-12-31'
+    ]
+};
 
-function isWorkingDay(date) {
-    return !isWeekend(date) && !isHoliday(date);
-}
-
-function findNextWorkingDay(date) {
-    let nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
-    while (!isWorkingDay(nextDay)) {
-        nextDay.setDate(nextDay.getDate() + 1);
-    }
-    return nextDay;
-}
-
-// Default date format
+// Default holiday system and date format
+let selectedHolidaySystem = 'EP';
 let dateFormat = 'dmy-text';
 
 function getCookie(name) {
@@ -108,17 +133,56 @@ function setCookie(name, value, days) {
 }
 
 if (typeof document !== 'undefined') {
-    const saved = getCookie('dateFormat');
-    if (saved) {
+    const savedDateFormat = getCookie('dateFormat');
+    if (savedDateFormat) {
         // Handle legacy format codes
-        if (saved === 'dmy') {
+        if (savedDateFormat === 'dmy') {
             dateFormat = 'dmy-text';
-        } else if (saved === 'mdy') {
+        } else if (savedDateFormat === 'mdy') {
             dateFormat = 'mdy-slash';
         } else {
-            dateFormat = saved;
+            dateFormat = savedDateFormat;
         }
     }
+
+    const savedHolidaySystem = getCookie('holidaySystem');
+    if (savedHolidaySystem) {
+        selectedHolidaySystem = savedHolidaySystem;
+    }
+}
+
+function isHoliday(date) {
+    // Check if the date is valid before trying to convert it
+    if (isNaN(date.getTime())) {
+        return false; // Invalid date is not a holiday
+    }
+    
+    // Format the date as YYYY-MM-DD for comparison with the holidays array
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
+    const holidays = holidayData[selectedHolidaySystem] || holidayData['EP'];
+    return holidays.includes(dateString);
+}
+
+function isWeekend(date) {
+    const day = date.getDay();
+    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+}
+
+function isWorkingDay(date) {
+    return !isWeekend(date) && !isHoliday(date);
+}
+
+function findNextWorkingDay(date) {
+    let nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    while (!isWorkingDay(nextDay)) {
+        nextDay.setDate(nextDay.getDate() + 1);
+    }
+    return nextDay;
 }
 
 function formatDate(date) {
@@ -637,11 +701,22 @@ function isSameDay(date1, date2) {
 function formatResult(result) {
     let output = '<div class="result-container">';
 
-
-
-
     // Add the final end date
     output += `<div class="result-date">End Date: ${formatDateTime(result.finalEndDate)}</div>`;
+    
+    // Add holiday system information
+    const holidaySystemNames = {
+        'EP': 'European Parliament',
+        'EC': 'European Commission',
+        'AT': 'Austria', 'BE': 'Belgium', 'BG': 'Bulgaria', 'HR': 'Croatia', 'CY': 'Cyprus',
+        'CZ': 'Czech Republic', 'DK': 'Denmark', 'EE': 'Estonia', 'FI': 'Finland', 'FR': 'France',
+        'DE': 'Germany', 'EL': 'Greece', 'HU': 'Hungary', 'IE': 'Ireland', 'IT': 'Italy',
+        'LV': 'Latvia', 'LT': 'Lithuania', 'LU': 'Luxembourg', 'MT': 'Malta', 'NL': 'Netherlands',
+        'PL': 'Poland', 'PT': 'Portugal', 'RO': 'Romania', 'SK': 'Slovakia', 'SI': 'Slovenia',
+        'ES': 'Spain', 'SE': 'Sweden'
+    };
+    
+    output += `<div style="font-size: 12px; color: #666; margin-bottom: 10px;">Using ${holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem} public holidays</div>`;
     
     // Add explanation
     output += '<div class="result-explanation">';
@@ -769,6 +844,7 @@ if (typeof module !== 'undefined' && module.exports) {
         const settingsBtn = document.getElementById('settings-btn');
         const settingsPanel = document.getElementById('settings-panel');
         const dateFormatSelect = document.getElementById('dateFormatSelect');
+        const holidaySystemSelect = document.getElementById('holidaySystemSelect');
 
         if (dateFormatSelect) {
             dateFormatSelect.value = dateFormat;
@@ -776,6 +852,15 @@ if (typeof module !== 'undefined' && module.exports) {
                 dateFormat = this.value;
                 setCookie('dateFormat', dateFormat, 365);
                 updateEventDateDisplay();
+                updateCalculation();
+            });
+        }
+
+        if (holidaySystemSelect) {
+            holidaySystemSelect.value = selectedHolidaySystem;
+            holidaySystemSelect.addEventListener('change', function() {
+                selectedHolidaySystem = this.value;
+                setCookie('holidaySystem', selectedHolidaySystem, 365);
                 updateCalculation();
             });
         }
