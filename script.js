@@ -237,7 +237,8 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         finalEndDate: null,
         appliedRules: [],
         explanation: [],
-        workingDaysCount: 0
+        workingDaysCount: 0,
+        holidayDataWarning: null
     };
 
     const isRetroactive = periodValue < 0;
@@ -504,6 +505,16 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     }
 
     result.finalEndDate = endDate;
+    
+    // Check holiday data coverage for the calculated period
+    const periodStart = new Date(Math.min(result.startDate, result.finalEndDate));
+    const periodEnd = new Date(Math.max(result.startDate, result.finalEndDate));
+    
+    const coverage = checkHolidayDataCoverage(periodStart, periodEnd, selectedHolidaySystem);
+    if (!coverage.isComplete) {
+        result.holidayDataWarning = generateHolidayWarning(coverage, selectedHolidaySystem);
+    }
+    
     return result;
 }
 
@@ -718,6 +729,11 @@ function formatResult(result) {
     
     output += `<div style="font-size: 12px; color: #666; margin-bottom: 10px;">Using ${holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem} public holidays</div>`;
     
+    // Add holiday data warning if applicable
+    if (result.holidayDataWarning) {
+        output += `<div class="holiday-warning" style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 14px;">${result.holidayDataWarning}</div>`;
+    }
+    
     // Add explanation
     output += '<div class="result-explanation">';
     
@@ -754,6 +770,120 @@ function formatResult(result) {
     renderCalendar(result);
     
     return output;
+}
+
+// Function to get the years covered by holiday data for a given system
+function getHolidayDataYears(holidaySystem) {
+    const holidays = holidayData[holidaySystem] || [];
+    const years = new Set();
+    
+    holidays.forEach(dateStr => {
+        const year = parseInt(dateStr.split('-')[0]);
+        years.add(year);
+    });
+    
+    return Array.from(years).sort();
+}
+
+// Function to check if we have complete holiday data for a date range
+function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
+    const availableYears = getHolidayDataYears(holidaySystem);
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    
+    const missingYears = [];
+    
+    for (let year = startYear; year <= endYear; year++) {
+        if (holidaySystem === 'EP') {
+            const holidays = holidayData[holidaySystem] || [];
+            const yearHolidays = holidays.filter(dateStr => dateStr.startsWith(`${year}-`));
+            
+            if (yearHolidays.length === 0) {
+                // No data at all for this year
+                missingYears.push(year);
+            } else {
+                // Check if we only have New Year period data (first week of January)
+                const hasOnlyNewYearDays = yearHolidays.every(dateStr => {
+                    const date = dateStr.split('-');
+                    return date[1] === '01' && parseInt(date[2]) <= 7; // First week
+                });
+                
+                if (hasOnlyNewYearDays) {
+                    // If we only have January 1-7 holidays, we don't have the full year's holidays
+                    const yearEarlyJan = new Date(year, 0, 7, 23, 59, 59, 999); // End of Jan 7
+                    
+                    // Check if any part of our period in this year extends beyond the New Year period
+                    const periodStartInYear = year === startYear ? startDate : new Date(year, 0, 1);
+                    const periodEndInYear = year === endYear ? endDate : new Date(year, 11, 31, 23, 59, 59, 999);
+                    
+                    if (periodEndInYear > yearEarlyJan) {
+                        // Period extends beyond New Year data coverage
+                        missingYears.push(year);
+                    }
+                }
+            }
+        } else {
+            // Non-EP systems: simple check for year availability
+            if (!availableYears.includes(year)) {
+                missingYears.push(year);
+            }
+        }
+    }
+    
+    return {
+        isComplete: missingYears.length === 0,
+        missingYears: missingYears,
+        availableYears: availableYears
+    };
+}
+
+// Function to generate holiday data warning message
+function generateHolidayWarning(coverage, holidaySystem) {
+    if (coverage.isComplete) {
+        return null;
+    }
+    
+    const holidaySystemNames = {
+        'EP': 'European Parliament',
+        'EC': 'European Commission',
+        'AT': 'Austria', 'BE': 'Belgium', 'BG': 'Bulgaria', 'HR': 'Croatia', 'CY': 'Cyprus',
+        'CZ': 'Czech Republic', 'DK': 'Denmark', 'EE': 'Estonia', 'FI': 'Finland', 'FR': 'France',
+        'DE': 'Germany', 'EL': 'Greece', 'HU': 'Hungary', 'IE': 'Ireland', 'IT': 'Italy',
+        'LV': 'Latvia', 'LT': 'Lithuania', 'LU': 'Luxembourg', 'MT': 'Malta', 'NL': 'Netherlands',
+        'PL': 'Poland', 'PT': 'Portugal', 'RO': 'Romania', 'SK': 'Slovakia', 'SI': 'Slovenia',
+        'ES': 'Spain', 'SE': 'Sweden'
+    };
+    
+    const systemName = holidaySystemNames[holidaySystem] || holidaySystem;
+    const missingYearsStr = coverage.missingYears.join(', ');
+    const availableYearsStr = coverage.availableYears.length > 0 ? 
+        coverage.availableYears.join(', ') : 'none';
+    
+    let message = `⚠️ <strong>Public Holiday Data Warning:</strong> `;
+    
+    if (holidaySystem === 'EP' && coverage.missingYears.length > 0) {
+        // Special message for European Parliament partial data
+        if (coverage.missingYears.length === 1) {
+            message += `Complete public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
+        } else {
+            message += `Complete public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
+        }
+        message += `Only New Year week holidays may be included for the missing year${coverage.missingYears.length > 1 ? 's' : ''}. `;
+        message += `Other public holidays are not accounted for. `;
+    } else {
+        if (coverage.missingYears.length === 1) {
+            message += `Public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
+        } else {
+            message += `Public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
+        }
+        message += `Only Sundays and Saturdays are treated as non-working days for the missing period${coverage.missingYears.length > 1 ? 's' : ''}. `;
+    }
+    
+    if (coverage.availableYears.length > 0) {
+        message += `Available data covers: ${availableYearsStr}.`;
+    }
+    
+    return message;
 }
 
 // Function to handle form submission
@@ -795,7 +925,10 @@ if (typeof module !== 'undefined' && module.exports) {
         getHolidaySystem: function() {
             return selectedHolidaySystem;
         },
-        holidayData
+        holidayData,
+        getHolidayDataYears,
+        checkHolidayDataCoverage,
+        generateHolidayWarning
     };
 } else if (typeof window !== 'undefined') {
     // Browser-specific code
@@ -921,4 +1054,5 @@ if (typeof module !== 'undefined' && module.exports) {
         const result = calculatePeriod(eventDateTime, periodValue, periodType);
         document.getElementById('result').innerHTML = formatResult(result);
     }
+
 } 
