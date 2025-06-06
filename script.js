@@ -787,7 +787,16 @@ function handleSubmit(event) {
 
 // Export for Node.js while preserving browser functionality
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { calculatePeriod };
+    module.exports = { 
+        calculatePeriod,
+        setHolidaySystem: function(system) {
+            selectedHolidaySystem = system;
+        },
+        getHolidaySystem: function() {
+            return selectedHolidaySystem;
+        },
+        holidayData
+    };
 } else if (typeof window !== 'undefined') {
     // Browser-specific code
     document.getElementById('periodForm').addEventListener('submit', handleSubmit);
