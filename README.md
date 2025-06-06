@@ -9,11 +9,39 @@ Try it out: [EU Date Calculator on GitHub Pages](https://bdamokos.github.io/eu-t
 ## Features
 
 - Calculate end dates based on periods (hours, days, weeks, months, years)
-- Option for working days only (excluding weekends and holidays)
+- Support for working days calculation (excluding weekends and holidays)
+- **Holiday System Selection**: Choose from EU Member State public holidays or EU institution calendars
+  - All 27 EU Member States with official 2025 public holidays
+  - European Parliament holiday calendar
+  - European Commission holiday calendar
+- Visual calendar display showing period calculation with holidays highlighted
+- Multiple date format options
+- Retroactive period calculation support
+
+## Holiday Data Sources
+
+The calculator uses official 2025 public holiday data from:
+
+- **EU Member States**: [OJ C, C/2024/7517, 20.12.2024](https://eur-lex.europa.eu/eli/C/2024/7517/oj/eng)
+- **European Parliament**: [Official Notice (Luxembourg, 25 July 2024)](https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2025_en.pdf)
+- **European Commission**: [OJ C, C/2024/2219, 22.3.2024](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219)
 
 ## Usage
 
-1. Select a start date and time
-2. Choose period type and value
-3. Optionally check "Working Days Only"
-4. Click "Calculate" to see the result
+1. Select an event date and time
+2. Choose period type (hours, days, working days, weeks, months, years) and value
+3. Select appropriate holiday system in Settings (⚙️):
+   - Choose your relevant EU Member State
+   - Or select European Parliament/Commission for EU institutional work
+4. Click "Calculate" to see the result with visual calendar
+
+## Legal Implementation
+
+This calculator implements the time calculation rules from **EU Regulation 1182/71**:
+
+- **Article 3(1)**: Event day/hour exclusion
+- **Article 3(2)**: Period calculation methods
+- **Article 3(4)**: Extension to next working day when period ends on non-working day
+- **Article 3(5)**: Minimum two working days requirement
+
+**Disclaimer**: For educational purposes only - not legal advice.
