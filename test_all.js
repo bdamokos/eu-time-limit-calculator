@@ -152,6 +152,90 @@ function testWorkingDaysWithDifferentHolidays() {
     console.log(`  ✓ Working days: EP ends ${iso(epWorkingDays.finalEndDate).slice(0,10)}, Austria ends ${iso(austriaWorkingDays.finalEndDate).slice(0,10)}`);
 }
 
+function testCaseC17103WeeksCalculation() {
+    // Test Case C-171/03: Periods expressed in weeks should end on the same day of week as event
+    // According to the court decision, for periods expressed in weeks, months, or years,
+    // Article 3(2)(c) takes precedence over Article 3(1)
+    
+    // Test: 3 weeks from Monday, April 7, 2025 should end on Monday, April 28, 2025
+    const mondayResult = calculatePeriod(new Date('2025-04-07T00:00:00Z'), 3, 'weeks');
+    assert(mondayResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(mondayResult.finalEndDate), '2025-04-28T23:59:59.999Z', 
+        '3 weeks from Monday April 7 should end on Monday April 28');
+    
+    // Test: 2 weeks from Friday, January 10, 2025 should end on Friday, January 24, 2025
+    const fridayResult = calculatePeriod(new Date('2025-01-10T00:00:00Z'), 2, 'weeks');
+    assert(fridayResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(fridayResult.finalEndDate), '2025-01-24T23:59:59.999Z', 
+        '2 weeks from Friday January 10 should end on Friday January 24');
+    
+    console.log(`  ✓ 3 weeks from Monday ends on Monday (same day of week)`);
+    console.log(`  ✓ 2 weeks from Friday ends on Friday (same day of week)`);
+}
+
+function testCaseC17103MonthsCalculation() {
+    // Test Case C-171/03: Periods expressed in months should end on same date as event
+    
+    // Test: 2 months from January 15, 2025 should end on March 15, 2025
+    // But March 15, 2025 is a Saturday, so Article 3(4) extends it to March 17, 2025 (Monday)
+    const monthResult = calculatePeriod(new Date('2025-01-15T00:00:00Z'), 2, 'months');
+    assert(monthResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert(monthResult.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should be applied because March 15 is a Saturday');
+    assert.strictEqual(iso(monthResult.finalEndDate), '2025-03-17T23:59:59.999Z', 
+        '2 months from January 15 should end on March 17 (extended from March 15 due to weekend)');
+    
+    // Test edge case: 1 month from January 31, 2025 should end on February 28, 2025 (last day of Feb)
+    const monthEdgeResult = calculatePeriod(new Date('2025-01-31T00:00:00Z'), 1, 'months');
+    assert(monthEdgeResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(monthEdgeResult.finalEndDate), '2025-02-28T23:59:59.999Z', 
+        '1 month from January 31 should end on February 28 (last day of February)');
+    
+    console.log(`  ✓ 2 months from January 15 ends on March 17 (March 15 extended due to weekend)`);
+    console.log(`  ✓ 1 month from January 31 ends on February 28 (last day of target month)`);
+}
+
+function testCaseC17103YearsCalculation() {
+    // Test Case C-171/03: Periods expressed in years should end on same date as event
+    
+    // Test: 1 year from March 10, 2025 should end on March 10, 2026
+    const yearResult = calculatePeriod(new Date('2025-03-10T00:00:00Z'), 1, 'years');
+    assert(yearResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(yearResult.finalEndDate), '2026-03-10T23:59:59.999Z', 
+        '1 year from March 10, 2025 should end on March 10, 2026');
+    
+    // Test leap year edge case: 1 year from February 29, 2024 should end on February 28, 2025
+    const leapYearResult = calculatePeriod(new Date('2024-02-29T00:00:00Z'), 1, 'years');
+    assert(leapYearResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(leapYearResult.finalEndDate), '2025-02-28T23:59:59.999Z', 
+        '1 year from February 29, 2024 should end on February 28, 2025');
+    
+    console.log(`  ✓ 1 year from March 10, 2025 ends on March 10, 2026 (same date)`);
+    console.log(`  ✓ 1 year from February 29, 2024 ends on February 28, 2025 (leap year adjustment)`);
+}
+
+function testDaysVsWeeksCalculation() {
+    // Compare that days and weeks calculations are now different per Case C-171/03
+    // Days still follow Article 3(1) (skip event day), but weeks follow Article 3(2)(c) (start from event day)
+    
+    // Test: 7 days vs 1 week from same starting date should give different results
+    const daysResult = calculatePeriod(new Date('2025-04-07T00:00:00Z'), 7, 'days');
+    const weeksResult = calculatePeriod(new Date('2025-04-07T00:00:00Z'), 1, 'weeks');
+    
+    // 7 days from April 7: starts April 8, ends April 14
+    assert.strictEqual(iso(daysResult.finalEndDate), '2025-04-14T23:59:59.999Z', 
+        '7 days from April 7 should end on April 14');
+    
+    // 1 week from April 7: starts April 7, ends April 14 (same day of week)
+    assert.strictEqual(iso(weeksResult.finalEndDate), '2025-04-14T23:59:59.999Z', 
+        '1 week from April 7 should end on April 14');
+    
+    // They happen to end on the same date in this case, but the logic is different
+    assert(daysResult.appliedRules.some(r => r.includes('Article 3(1)')), 'Days should apply Article 3(1)');
+    assert(weeksResult.appliedRules.some(r => r.includes('Case C-171/03')), 'Weeks should apply Case C-171/03');
+    
+    console.log(`  ✓ 7 days and 1 week from same date use different calculation methods`);
+}
+
 console.log('Running tests...');
 
 const tests = [
@@ -163,7 +247,11 @@ const tests = [
     { name: 'Country-specific holidays (Austria vs Germany)', fn: testCountrySpecificHolidays },
     { name: 'Bulgarian Liberation Day vs Germany', fn: testBulgarianSpecificHoliday },
     { name: 'European institutions vs Member States', fn: testEuropeanInstitutionsVsMemberStates },
-    { name: 'Working days with different holiday systems', fn: testWorkingDaysWithDifferentHolidays }
+    { name: 'Working days with different holiday systems', fn: testWorkingDaysWithDifferentHolidays },
+    { name: 'Case C-171/03: Weeks calculation', fn: testCaseC17103WeeksCalculation },
+    { name: 'Case C-171/03: Months calculation', fn: testCaseC17103MonthsCalculation },
+    { name: 'Case C-171/03: Years calculation', fn: testCaseC17103YearsCalculation },
+    { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation }
 ];
 
 const failures = [];

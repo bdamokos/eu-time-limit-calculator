@@ -87,6 +87,26 @@
     color: white;
 }
 
+.calendar-day.start-event-date {
+    background: linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%);
+    color: white;
+    position: relative;
+    border: 1px dashed #9c27b0;
+    text-shadow: 0 0 3px rgba(0,0,0,0.7), 0 0 6px rgba(0,0,0,0.5);
+    font-weight: bold;
+}
+
+.calendar-day.start-event-date::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(to bottom right, transparent 0%, transparent 48%, #9c27b0 49%, #9c27b0 51%, transparent 52%, transparent 100%);
+    pointer-events: none;
+}
+
 .calendar-day.extension {
     border: 1px dashed #1a73e8;
 }

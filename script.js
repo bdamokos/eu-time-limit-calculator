@@ -244,7 +244,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     const isRetroactive = periodValue < 0;
     const absolutePeriodValue = Math.abs(periodValue);
 
-    // Step 1: Apply Article 3(1) - Skip the event hour/day
+    // Step 1: Apply Article 3(1) - Skip the event hour/day (except for weeks, months, years per Case C-171/03)
     let startDate = new Date(eventDateTime);
     
     if (periodType === 'hours') {
@@ -258,6 +258,12 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             result.appliedRules.push('Article 3(1): Hour of event not counted, starting from next hour');
             result.explanation.push(`According to Article 3(1), the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the next hour (${startDate.getHours()}:00).`);
         }
+    } else if (periodType === 'weeks' || periodType === 'months' || periodType === 'years') {
+        // Per Case C-171/03, for periods expressed in weeks, months, or years, 
+        // Article 3(2)(c) takes precedence and the period runs from the event day itself
+        startDate.setHours(0, 0, 0, 0);
+        result.appliedRules.push('Case C-171/03: For weeks/months/years, period starts from the event day itself (Article 3(2)(c) takes precedence over Article 3(1))');
+        result.explanation.push(`According to <a href="https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:62003CJ0171" target="_blank">Case C-171/03</a>, for periods expressed in weeks, months, or years, Article 3(2)(c) takes precedence over Article 3(1). The period starts from the event day itself (${formatDate(startDate)}).`);
     } else {
         if (isRetroactive) {
             startDate.setHours(0, 0, 0, 0);
@@ -323,13 +329,13 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         result.appliedRules.push(`Article 3(2)(b): ${absolutePeriodValue} calendar days ${isRetroactive ? 'retroactive ' : ''}calculated`);
     } else if (periodType === 'weeks') {
         if (isRetroactive) {
-            endDate.setDate(endDate.getDate() - (absolutePeriodValue * 7) + 1);
+            endDate.setDate(endDate.getDate() - (absolutePeriodValue * 7));
             endDate.setHours(0, 0, 0, 0);
         } else {
-            endDate.setDate(endDate.getDate() + (absolutePeriodValue * 7) - 1);
+            endDate.setDate(endDate.getDate() + (absolutePeriodValue * 7));
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} weeks ${isRetroactive ? 'retroactive ' : ''}calculated`);
+        result.appliedRules.push(`Article 3(2)(c) per Case C-171/03: ${absolutePeriodValue} weeks ${isRetroactive ? 'retroactive ' : ''}calculated, ending on same day of week as event`);
     } else if (periodType === 'months') {
         if (isRetroactive) {
             // For retroactive calculation, subtract months and handle overflow
@@ -360,10 +366,10 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             }
             
             // Article 3(2)(c): Period ends on the same date as the day from which it runs
-            // No subtraction needed - the end date is the target date itself
+            // The end date is the target date itself (already correctly calculated)
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} months ${isRetroactive ? 'retroactive ' : ''}calculated`);
+        result.appliedRules.push(`Article 3(2)(c) per Case C-171/03: ${absolutePeriodValue} months ${isRetroactive ? 'retroactive ' : ''}calculated, ending on same date as event`);
     } else if (periodType === 'years') {
         if (isRetroactive) {
             // For retroactive calculation, subtract years and handle overflow (e.g., Feb 29 in non-leap year)
@@ -390,10 +396,10 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             }
             
             // Article 3(2)(c): Period ends on the same date as the day from which it runs
-            // No subtraction needed - the end date is the target date itself
+            // The end date is the target date itself (already correctly calculated)
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} years ${isRetroactive ? 'retroactive ' : ''}calculated`);
+        result.appliedRules.push(`Article 3(2)(c) per Case C-171/03: ${absolutePeriodValue} years ${isRetroactive ? 'retroactive ' : ''}calculated, ending on same date as event`);
     }
 
     result.initialEndDate = new Date(endDate);
@@ -539,6 +545,10 @@ function renderCalendar(result) {
             <span>Event Date</span>
         </div>
         <div class="legend-item">
+            <div class="legend-color" style="background: linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%); border: 1px dashed #9c27b0;"></div>
+            <span>Start + Event Date</span>
+        </div>
+        <div class="legend-item">
             <div class="legend-color" style="background-color: #e8f0fe;"></div>
             <span>Working Day</span>
         </div>
@@ -671,14 +681,21 @@ function renderMonthCalendar(date, result, container) {
                 }
 
                 // Mark start and end dates - for retroactive calculations, these are reversed
-                if (isSameDay(currentDate, result.startDate)) {
+                const isStartDate = isSameDay(currentDate, result.startDate);
+                const isEventDate = isSameDay(currentDate, result.eventDate);
+                const isEndDate = isSameDay(currentDate, result.finalEndDate);
+                
+                if (isStartDate && isEventDate) {
+                    // Both start and event date - show diagonal split
+                    dayElement.classList.add('start-event-date');
+                } else if (isStartDate) {
                     dayElement.classList.add('start-date');
-                }
-                if (isSameDay(currentDate, result.finalEndDate)) {
-                    dayElement.classList.add('end-date');
-                }
-                if (isSameDay(currentDate, result.eventDate)) {
+                } else if (isEventDate) {
                     dayElement.classList.add('event-date');
+                }
+                
+                if (isEndDate) {
+                    dayElement.classList.add('end-date');
                 }
 
                 // Mark extension days - need to handle both forward and retroactive cases
@@ -749,12 +766,10 @@ function formatResult(result) {
     // Step 2: Explain initial end date calculation
     if (result.initialEndDate) {
         const initialDateStr = formatDate(result.initialEndDate);
-        const endDateBeforeArt35 = article34Applied ? 
-            result.appliedRules.find(rule => rule.includes('Extended to:'))?.split('Extended to: ')[1] :
-            formatDateTime(result.initialEndDate);
         
         if (article34Applied) {
-            output += `<br>The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${formatDate(new Date(endDateBeforeArt35))}).`;
+            // For Article 3(4), the final end date is the extended date
+            output += `<br>The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${formatDate(result.finalEndDate)}).`;
         }
     }
     
