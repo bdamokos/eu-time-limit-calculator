@@ -44,4 +44,6 @@ This calculator implements the time calculation rules from **EU Regulation 1182/
 - **Article 3(4)**: Extension to next working day when period ends on non-working day
 - **Article 3(5)**: Minimum two working days requirement
 
+**Court Interpretation**: The calculator incorporates the interpretation from [**Case C-171/03**](https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:62003CJ0171), which establishes that for periods expressed in weeks, months, or years, Article 3(2)(c) takes precedence over Article 3(1). This means such periods start from the event day itself rather than excluding it.
+
 **Disclaimer**: For educational purposes only - not legal advice.
