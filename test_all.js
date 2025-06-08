@@ -213,6 +213,93 @@ function testCaseC17103YearsCalculation() {
     console.log(`  ✓ 1 year from February 29, 2024 ends on February 28, 2025 (leap year adjustment)`);
 }
 
+function testMonthEndEdgeCases() {
+    // Test comprehensive month-end edge cases where target day doesn't exist in destination month
+    // Per Article 3(2)(c): "If, in a period expressed in months or in years, the day on which it should 
+    // expire does not occur in the last month, the period shall end with the expiry of the last hour 
+    // of the last day of that month"
+    
+    // Test 1: January 30 + 1 month in non-leap year = February 28
+    const jan30NonLeap = calculatePeriod(new Date('2025-01-30T00:00:00Z'), 1, 'months');
+    assert(jan30NonLeap.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(jan30NonLeap.finalEndDate), '2025-02-28T23:59:59.999Z', 
+        'January 30, 2025 + 1 month should end on February 28, 2025 (non-leap year)');
+    
+    // Test 2: January 30 + 1 month in leap year = February 29
+    const jan30LeapYear = calculatePeriod(new Date('2024-01-30T00:00:00Z'), 1, 'months');
+    assert(jan30LeapYear.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(jan30LeapYear.finalEndDate), '2024-02-29T23:59:59.999Z', 
+        'January 30, 2024 + 1 month should end on February 29, 2024 (leap year)');
+    
+    // Test 3: February 28 + 1 month = March 28 (should NOT trigger last-day rule)
+    const feb28 = calculatePeriod(new Date('2025-02-28T00:00:00Z'), 1, 'months');
+    assert(feb28.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(feb28.finalEndDate), '2025-03-28T23:59:59.999Z', 
+        'February 28, 2025 + 1 month should end on March 28, 2025');
+    
+    // Test 4: February 29 + 1 month = March 29 (leap year case)
+    const feb29 = calculatePeriod(new Date('2024-02-29T00:00:00Z'), 1, 'months');
+    assert(feb29.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(feb29.finalEndDate), '2024-03-29T23:59:59.999Z', 
+        'February 29, 2024 + 1 month should end on March 29, 2024');
+    
+    // Test 5: March 31 + 1 month = April 30 (31-day to 30-day month)
+    const mar31 = calculatePeriod(new Date('2025-03-31T00:00:00Z'), 1, 'months');
+    assert(mar31.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(mar31.finalEndDate), '2025-04-30T23:59:59.999Z', 
+        'March 31, 2025 + 1 month should end on April 30, 2025 (last day of April)');
+    
+    // Test 6: May 31 + 1 month = June 30 (31-day to 30-day month)
+    const may31 = calculatePeriod(new Date('2025-05-31T00:00:00Z'), 1, 'months');
+    assert(may31.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(may31.finalEndDate), '2025-06-30T23:59:59.999Z', 
+        'May 31, 2025 + 1 month should end on June 30, 2025 (last day of June)');
+    
+    // Test 7: August 31 + 1 month = September 30 (31-day to 30-day month)
+    const aug31 = calculatePeriod(new Date('2025-08-31T00:00:00Z'), 1, 'months');
+    assert(aug31.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(aug31.finalEndDate), '2025-09-30T23:59:59.999Z', 
+        'August 31, 2025 + 1 month should end on September 30, 2025 (last day of September)');
+    
+    // Test 8: October 31 + 1 month = November 30, but November 30, 2025 is Sunday, so extended to December 1
+    const oct31 = calculatePeriod(new Date('2025-10-31T00:00:00Z'), 1, 'months');
+    assert(oct31.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert(oct31.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should be applied (Nov 30 is Sunday)');
+    assert.strictEqual(iso(oct31.finalEndDate), '2025-12-01T23:59:59.999Z', 
+        'October 31, 2025 + 1 month should end on December 1, 2025 (November 30 extended due to Sunday)');
+    
+    // Test 9: December 31 + 1 month = January 31, but January 31, 2026 is Saturday, so extended to February 2
+    const dec31 = calculatePeriod(new Date('2025-12-31T00:00:00Z'), 1, 'months');
+    assert(dec31.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert(dec31.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should be applied (Jan 31 is Saturday)');
+    assert.strictEqual(iso(dec31.finalEndDate), '2026-02-02T23:59:59.999Z', 
+        'December 31, 2025 + 1 month should end on February 2, 2026 (January 31 extended due to Saturday)');
+    
+    // Test 10: Test multiple months with edge cases
+    // January 31 + 2 months = March 31 (Jan 31 -> Feb 28 -> Mar 31)
+    const jan31TwoMonths = calculatePeriod(new Date('2025-01-31T00:00:00Z'), 2, 'months');
+    assert(jan31TwoMonths.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert.strictEqual(iso(jan31TwoMonths.finalEndDate), '2025-03-31T23:59:59.999Z', 
+        'January 31, 2025 + 2 months should end on March 31, 2025');
+    
+    // Test 11: Test with Article 3(4) extension (weekend extension)
+    // March 31 + 1 month = April 30, but if April 30 is weekend, should extend
+    const mar31Weekend = calculatePeriod(new Date('2023-03-31T00:00:00Z'), 1, 'months');
+    // April 30, 2023 is a Sunday, so should extend to May 1, 2023
+    assert(mar31Weekend.appliedRules.some(r => r.includes('Case C-171/03')), 'Case C-171/03 rule should be applied');
+    assert(mar31Weekend.appliedRules.some(r => r.includes('Article 3(4)')), 'Article 3(4) should be applied for weekend extension');
+    assert.strictEqual(iso(mar31Weekend.finalEndDate), '2023-05-01T23:59:59.999Z', 
+        'March 31, 2023 + 1 month should end on May 1, 2023 (April 30 extended due to Sunday)');
+    
+    console.log(`  ✓ January 30 + 1 month: Non-leap year -> February 28, Leap year -> February 29`);
+    console.log(`  ✓ February 28 + 1 month -> March 28 (no last-day adjustment needed)`);
+    console.log(`  ✓ February 29 + 1 month -> March 29 (leap year case)`);
+    console.log(`  ✓ 31st day to 30-day months: Mar->Apr, May->Jun, Aug->Sep, Oct->Nov (with weekend extension)`);
+    console.log(`  ✓ December 31 + 1 month -> February 2 (year transition + weekend extension)`);
+    console.log(`  ✓ January 31 + 2 months -> March 31 (multi-month calculation)`);
+    console.log(`  ✓ Month-end + weekend extension works correctly`);
+}
+
 function testDaysVsWeeksCalculation() {
     // Compare that days and weeks calculations are now different per Case C-171/03
     // Days still follow Article 3(1) (skip event day), but weeks follow Article 3(2)(c) (start from event day)
@@ -251,6 +338,7 @@ const tests = [
     { name: 'Case C-171/03: Weeks calculation', fn: testCaseC17103WeeksCalculation },
     { name: 'Case C-171/03: Months calculation', fn: testCaseC17103MonthsCalculation },
     { name: 'Case C-171/03: Years calculation', fn: testCaseC17103YearsCalculation },
+    { name: 'Month-end edge cases (Article 3(2)(c))', fn: testMonthEndEdgeCases },
     { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation }
 ];
 
