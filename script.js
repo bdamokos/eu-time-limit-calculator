@@ -133,21 +133,36 @@ function setCookie(name, value, days) {
 }
 
 if (typeof document !== 'undefined') {
-    const savedDateFormat = getCookie('dateFormat');
-    if (savedDateFormat) {
-        // Handle legacy format codes
-        if (savedDateFormat === 'dmy') {
-            dateFormat = 'dmy-text';
-        } else if (savedDateFormat === 'mdy') {
-            dateFormat = 'mdy-slash';
-        } else {
-            dateFormat = savedDateFormat;
+    // First check URL parameters, then fall back to cookies
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Load date format from URL or cookie
+    const urlDateFormat = urlParams.get('format');
+    if (urlDateFormat) {
+        dateFormat = urlDateFormat;
+    } else {
+        const savedDateFormat = getCookie('dateFormat');
+        if (savedDateFormat) {
+            // Handle legacy format codes
+            if (savedDateFormat === 'dmy') {
+                dateFormat = 'dmy-text';
+            } else if (savedDateFormat === 'mdy') {
+                dateFormat = 'mdy-slash';
+            } else {
+                dateFormat = savedDateFormat;
+            }
         }
     }
 
-    const savedHolidaySystem = getCookie('holidaySystem');
-    if (savedHolidaySystem) {
-        selectedHolidaySystem = savedHolidaySystem;
+    // Load holiday system from URL or cookie
+    const urlHolidaySystem = urlParams.get('holidays');
+    if (urlHolidaySystem) {
+        selectedHolidaySystem = urlHolidaySystem;
+    } else {
+        const savedHolidaySystem = getCookie('holidaySystem');
+        if (savedHolidaySystem) {
+            selectedHolidaySystem = savedHolidaySystem;
+        }
     }
 }
 
@@ -783,9 +798,14 @@ function formatResult(result) {
     // Add calendar export section
     output += `
         <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; text-align: center;">
-            <button onclick="openCalendarModal()" class="calendar-export-trigger">
-                📅 Export to Calendar
-            </button>
+            <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <button onclick="openCalendarModal()" class="calendar-export-trigger">
+                    📅 Export to Calendar
+                </button>
+                <button onclick="copyPermalinkToClipboard()" class="calendar-export-trigger" title="Copy shareable link">
+                    🔗 Share Link
+                </button>
+            </div>
         </div>
     `;
     
@@ -1129,9 +1149,13 @@ function openCalendarModal() {
     const modal = document.getElementById('calendarModal');
     modal.style.display = 'flex';
     
-    // Set focus to event name input
+    // Set focus to event name input and populate from permalink if available
     setTimeout(() => {
-        document.getElementById('modalDeadlineName').focus();
+        const eventNameInput = document.getElementById('modalDeadlineName');
+        if (window.permalinkEventName && !eventNameInput.value) {
+            eventNameInput.value = window.permalinkEventName;
+        }
+        eventNameInput.focus();
     }, 100);
 }
 
@@ -1226,6 +1250,185 @@ function handleSubmit(event) {
     document.getElementById('result').innerHTML = formatResult(result);
 }
 
+// Permalink functionality
+function generatePermalink(includeEventName = false) {
+    if (typeof window === 'undefined') return '';
+    
+    const params = new URLSearchParams();
+    
+    // Get current form values
+    const eventDate = document.getElementById('eventDate')?.value;
+    const eventTime = document.getElementById('eventTime')?.value;
+    const periodValue = document.getElementById('periodValue')?.value;
+    const periodType = document.getElementById('periodType')?.value;
+    
+    // Add required parameters
+    if (eventDate) params.set('date', eventDate);
+    if (eventTime) params.set('time', eventTime);
+    if (periodValue) params.set('period', periodValue);
+    if (periodType) params.set('type', periodType);
+    
+    // Add settings
+    if (selectedHolidaySystem !== 'EP') params.set('holidays', selectedHolidaySystem);
+    if (dateFormat !== 'dmy-text') params.set('format', dateFormat);
+    
+    // Add event name if requested and available
+    if (includeEventName) {
+        const eventName = document.getElementById('modalDeadlineName')?.value;
+        if (eventName) params.set('name', eventName);
+    }
+    
+    const baseUrl = window.location.origin + window.location.pathname;
+    return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
+}
+
+function updateUrlFromForm() {
+    if (typeof window === 'undefined' || typeof history === 'undefined') return;
+    
+    const permalink = generatePermalink();
+    const newUrl = permalink;
+    
+    // Only update if URL would actually change
+    if (newUrl !== window.location.href) {
+        history.replaceState(null, '', newUrl);
+    }
+}
+
+function loadStateFromUrl() {
+    if (typeof window === 'undefined') return false;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    let hasParams = false;
+    
+    // Load form values from URL
+    const eventDate = urlParams.get('date');
+    const eventTime = urlParams.get('time');
+    const periodValue = urlParams.get('period');
+    const periodType = urlParams.get('type');
+    const eventName = urlParams.get('name');
+    
+    if (eventDate) {
+        const eventDateInput = document.getElementById('eventDate');
+        if (eventDateInput) {
+            eventDateInput.value = eventDate;
+            hasParams = true;
+        }
+    }
+    
+    if (eventTime) {
+        const eventTimeInput = document.getElementById('eventTime');
+        if (eventTimeInput) {
+            eventTimeInput.value = eventTime;
+            hasParams = true;
+        }
+    }
+    
+    if (periodValue) {
+        const periodValueInput = document.getElementById('periodValue');
+        if (periodValueInput) {
+            periodValueInput.value = periodValue;
+            hasParams = true;
+        }
+    }
+    
+    if (periodType) {
+        const periodTypeSelect = document.getElementById('periodType');
+        if (periodTypeSelect) {
+            periodTypeSelect.value = periodType;
+            hasParams = true;
+        }
+    }
+    
+    // Store event name for later use in modal
+    if (eventName) {
+        window.permalinkEventName = eventName;
+        hasParams = true;
+    }
+    
+    return hasParams;
+}
+
+function copyPermalinkToClipboard() {
+    const permalink = generatePermalink(true); // Include event name if available
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(permalink).then(() => {
+            showPermalinkFeedback('Permalink copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy permalink:', err);
+            fallbackCopyToClipboard(permalink);
+        });
+    } else {
+        fallbackCopyToClipboard(permalink);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showPermalinkFeedback('Permalink copied to clipboard!');
+        } else {
+            showPermalinkFeedback('Failed to copy permalink. Please copy manually.');
+            promptManualCopy(text);
+        }
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        showPermalinkFeedback('Failed to copy permalink. Please copy manually.');
+        promptManualCopy(text);
+    } finally {
+        document.body.removeChild(textArea);
+    }
+}
+
+function promptManualCopy(text) {
+    const input = prompt('Copy this permalink:', text);
+    // User can select all and copy manually
+}
+
+function showPermalinkFeedback(message) {
+    // Remove any existing feedback
+    const existingFeedback = document.querySelector('.permalink-feedback');
+    if (existingFeedback) {
+        existingFeedback.remove();
+    }
+    
+    // Create feedback element
+    const feedback = document.createElement('div');
+    feedback.className = 'permalink-feedback';
+    feedback.textContent = message;
+    feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 1000;
+        font-size: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    `;
+    
+    document.body.appendChild(feedback);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.parentNode.removeChild(feedback);
+        }
+    }, 3000);
+}
+
 // Export for Node.js while preserving browser functionality
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
@@ -1247,14 +1450,21 @@ if (typeof module !== 'undefined' && module.exports) {
 
     // Add event listener when the document is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        // Set default date to today
-        const eventDateInput = document.getElementById('eventDate');
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        eventDateInput.value = `${year}-${month}-${day}`;
+        // Load state from URL first, then set defaults if no URL params
+        const hasUrlParams = loadStateFromUrl();
+        
+        if (!hasUrlParams) {
+            // Set default date to today only if no URL params
+            const eventDateInput = document.getElementById('eventDate');
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            eventDateInput.value = `${year}-${month}-${day}`;
+        }
+        
         updateEventDateDisplay();
+        const eventDateInput = document.getElementById('eventDate');
         eventDateInput.addEventListener('change', updateEventDateDisplay);
         eventDateInput.addEventListener('input', updateEventDateDisplay);
         
@@ -1317,6 +1527,11 @@ if (typeof module !== 'undefined' && module.exports) {
                 updateCalculation();
             });
         }
+        
+        // If we loaded from URL and have an event name, populate the modal input
+        if (window.permalinkEventName) {
+            // We'll set this when the modal opens
+        }
 
         if (settingsBtn && settingsPanel) {
             settingsBtn.addEventListener('click', function(e) {
@@ -1364,6 +1579,9 @@ if (typeof module !== 'undefined' && module.exports) {
         
         const result = calculatePeriod(eventDateTime, periodValue, periodType);
         document.getElementById('result').innerHTML = formatResult(result);
+        
+        // Update URL to reflect current calculation
+        updateUrlFromForm();
     }
 
 } 

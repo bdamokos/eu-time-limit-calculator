@@ -138,6 +138,20 @@
         .preset-btn:hover {
             background-color: #d2e3fc;
         }
+
+        .permalink-feedback {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
         footer {
             text-align: center;
             padding: 20px;
@@ -247,7 +261,7 @@
                 </div>
             </div>
             
-                        <button type="submit">Calculate</button>
+            <button type="submit">Calculate</button>
         </form>
         
         <div id="result"></div>
