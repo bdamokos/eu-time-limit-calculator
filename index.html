@@ -247,7 +247,7 @@
                 </div>
             </div>
             
-            <button type="submit">Calculate</button>
+                        <button type="submit">Calculate</button>
         </form>
         
         <div id="result"></div>
@@ -269,6 +269,55 @@
         </ul>
         <p><a href="https://github.com/bdamokos/eu-time-limit-calculator" target="_blank">View source code on GitHub</a></p>
     </footer>
+
+    <!-- Calendar Export Modal -->
+    <div id="calendarModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📅 Export to Calendar</h3>
+                <span class="close" onclick="closeCalendarModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="modalDeadlineName">Event Name (optional):</label>
+                    <input type="text" id="modalDeadlineName" placeholder="e.g., Response deadline for Case XYZ" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666; display: block; margin-top: 4px;">This will appear as the event title in your calendar</small>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px; color: #1a73e8;">Deadline Export (Recommended)</h4>
+                    <p style="margin-bottom: 15px; font-size: 14px; color: #666;">All-day event on deadline with 1-day advance reminder</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="handleModalExport('deadline', 'ical')" class="export-btn primary">
+                            📅 Download .ics
+                        </button>
+                        <button onclick="handleModalExport('deadline', 'google')" class="export-btn google">
+                            📅 Google Calendar
+                        </button>
+                        <button onclick="handleModalExport('deadline', 'outlook')" class="export-btn outlook">
+                            📧 Outlook
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style="margin-bottom: 10px; color: #1a73e8;">Period Export</h4>
+                    <p style="margin-bottom: 15px; font-size: 14px; color: #666;">Multi-day event spanning entire calculation period</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button onclick="handleModalExport('period', 'ical')" class="export-btn secondary">
+                            📅 Download .ics
+                        </button>
+                        <button onclick="handleModalExport('period', 'google')" class="export-btn google">
+                            📅 Google Calendar
+                        </button>
+                        <button onclick="handleModalExport('period', 'outlook')" class="export-btn outlook">
+                            📧 Outlook
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script src="script.js"></script>
 </body>

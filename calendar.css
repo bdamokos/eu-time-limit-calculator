@@ -178,4 +178,143 @@
 .calendar-month-wrapper {
     flex: 0 0 auto;
     width: 280px;
-} 
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #1a73e8;
+    font-size: 18px;
+}
+
+.close {
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #666;
+    border: none;
+    background: none;
+    padding: 0;
+    line-height: 1;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Export Button Styles */
+.export-btn {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.export-btn.primary {
+    background-color: #28a745;
+    color: white;
+}
+
+.export-btn.primary:hover {
+    background-color: #218838;
+}
+
+.export-btn.secondary {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.export-btn.secondary:hover {
+    background-color: #138496;
+}
+
+.export-btn.google {
+    background-color: #4285f4;
+    color: white;
+}
+
+.export-btn.google:hover {
+    background-color: #3367d6;
+}
+
+.export-btn.outlook {
+    background-color: #0078d4;
+    color: white;
+}
+
+.export-btn.outlook:hover {
+    background-color: #106ebe;
+}
+
+.calendar-export-trigger {
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.calendar-export-trigger:hover {
+    background-color: #1557b0;
+}
