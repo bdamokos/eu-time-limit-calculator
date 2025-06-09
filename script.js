@@ -1,3 +1,22 @@
+// String interpolation helper function
+function interpolateString(template, params) {
+    return template.replace(/\{(\w+)\}/g, (match, key) => {
+        return params[key] !== undefined ? params[key] : match;
+    });
+}
+
+// Load strings (will be available after DOM loads for browser, immediately for Node.js)
+let appStrings;
+if (typeof module !== 'undefined' && module.exports) {
+    // Node.js environment
+    appStrings = require('./strings.js');
+} else if (typeof window !== 'undefined') {
+    // Browser environment - will load after script.js loads
+    document.addEventListener('DOMContentLoaded', function() {
+        appStrings = window.strings;
+    });
+}
+
 // Holiday data organized by country/institution
 const holidayData = {
     // EU Member States holidays for 2025 based on OJ C, C/2024/7517, 20.12.2024
@@ -284,31 +303,41 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         if (isRetroactive) {
             startDate.setHours(startDate.getHours() - 1);
             startDate.setMinutes(59, 59, 999); // Start from end of previous hour
-            result.appliedRules.push('Article 3(1): Hour of event not counted, starting from end of previous hour for retroactive calculation');
-            result.explanation.push(`According to Article 3(1), for retroactive calculation, the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the end of the previous hour (${startDate.getHours()}:59) and counts backwards.`);
+            const rule = appStrings?.appliedRules?.article31HourSkippedRetroactive || 'Article 3(1) applied';
+            result.appliedRules.push(rule);
+            const explanation = appStrings?.articles?.article31HoursRetroactive || 'Article 3(1) explanation';
+            result.explanation.push(interpolateString(explanation, { eventHour: eventDateTime.getHours(), startHour: startDate.getHours() }));
         } else {
             startDate.setHours(startDate.getHours() + 1);
-            result.appliedRules.push('Article 3(1): Hour of event not counted, starting from next hour');
-            result.explanation.push(`According to Article 3(1), the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the next hour (${startDate.getHours()}:00).`);
+            const rule = appStrings?.appliedRules?.article31HourSkipped || 'Article 3(1) applied';
+            result.appliedRules.push(rule);
+            const explanation = appStrings?.articles?.article31Hours || 'Article 3(1) explanation';
+            result.explanation.push(interpolateString(explanation, { eventHour: eventDateTime.getHours(), startHour: startDate.getHours() }));
         }
     } else if (periodType === 'weeks' || periodType === 'months' || periodType === 'years') {
         // Per Case C-171/03, for periods expressed in weeks, months, or years, 
         // Article 3(2)(c) takes precedence and the period runs from the event day itself
         startDate.setHours(0, 0, 0, 0);
-        result.appliedRules.push('Case C-171/03: For weeks/months/years, period starts from the event day itself (Article 3(2)(c) takes precedence over Article 3(1))');
-        result.explanation.push(`According to <a href="https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:62003CJ0171" target="_blank" rel="noopener">Case C-171/03</a>, for periods expressed in weeks, months, or years, Article 3(2)(c) takes precedence over Article 3(1). The period starts from the event day itself (${formatDate(startDate)}).`);
+        const caseRule = appStrings?.appliedRules?.caseC17103Precedence || 'Case C-171/03 applied';
+        result.appliedRules.push(caseRule);
+        const caseExplanation = appStrings?.articles?.caseC17103 || 'Case C-171/03 explanation';
+        result.explanation.push(interpolateString(caseExplanation, { eventDate: formatDate(startDate) }));
     } else {
         if (isRetroactive) {
             // For retroactive calculations, skip the event day by starting from the previous day
             startDate.setDate(startDate.getDate() - 1);
             startDate.setHours(23, 59, 59, 999); // Start from end of previous day
-            result.appliedRules.push('Article 3(1): Day of event not counted, starting from end of previous day for retroactive calculation');
-            result.explanation.push(`According to Article 3(1), for retroactive calculation, the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the end of the previous day (${formatDate(startDate)}) and counts backwards.`);
+            const rule = appStrings?.appliedRules?.article31DaySkippedRetroactive || 'Article 3(1) applied';
+            result.appliedRules.push(rule);
+            const explanation = appStrings?.articles?.article31DaysRetroactive || 'Article 3(1) explanation';
+            result.explanation.push(interpolateString(explanation, { eventDate: formatDate(eventDateTime), startDate: formatDate(startDate) }));
         } else {
             startDate.setDate(startDate.getDate() + 1);
             startDate.setHours(0, 0, 0, 0);
-            result.appliedRules.push('Article 3(1): Day of event not counted, starting from next day');
-            result.explanation.push(`According to Article 3(1), the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the next day (${formatDate(startDate)}).`);
+            const rule = appStrings?.appliedRules?.article31DaySkipped || 'Article 3(1) applied';
+            result.appliedRules.push(rule);
+            const explanation = appStrings?.articles?.article31Days || 'Article 3(1) explanation';
+            result.explanation.push(interpolateString(explanation, { eventDate: formatDate(eventDateTime), startDate: formatDate(startDate) }));
         }
     }
 
@@ -326,7 +355,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setHours(endDate.getHours() + absolutePeriodValue - 1);
             endDate.setMinutes(59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(a): ${absolutePeriodValue} hour ${isRetroactive ? 'retroactive ' : ''}period calculated`);
+        const hourRule = appStrings?.appliedRules?.article32Hours || 'Article 3(2)(a) applied';
+        result.appliedRules.push(interpolateString(hourRule, { 
+            periodValue: absolutePeriodValue, 
+            retroactive: isRetroactive ? 'retroactive ' : '' 
+        }));
     } else if (periodType === 'working-days') {
         let remainingDays = absolutePeriodValue;
         let currentDate = new Date(startDate);
@@ -352,7 +385,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate = new Date(currentDate);
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(b): ${absolutePeriodValue} working days ${isRetroactive ? 'retroactive ' : ''}calculated`);
+        const workingDaysRule = appStrings?.appliedRules?.article32WorkingDays || 'Article 3(2)(b) applied';
+        result.appliedRules.push(interpolateString(workingDaysRule, { 
+            periodValue: absolutePeriodValue, 
+            retroactive: isRetroactive ? 'retroactive ' : '' 
+        }));
     } else if (periodType === 'days') {
         if (isRetroactive) {
             endDate.setDate(endDate.getDate() - absolutePeriodValue + 1);
@@ -361,7 +398,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setDate(endDate.getDate() + absolutePeriodValue - 1);
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(b): ${absolutePeriodValue} calendar days ${isRetroactive ? 'retroactive ' : ''}calculated`);
+        const calendarDaysRule = appStrings?.appliedRules?.article32CalendarDays || 'Article 3(2)(b) applied';
+        result.appliedRules.push(interpolateString(calendarDaysRule, { 
+            periodValue: absolutePeriodValue, 
+            retroactive: isRetroactive ? 'retroactive ' : '' 
+        }));
     } else if (periodType === 'weeks') {
         if (isRetroactive) {
             endDate.setDate(endDate.getDate() - (absolutePeriodValue * 7));
@@ -370,7 +411,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setDate(endDate.getDate() + (absolutePeriodValue * 7));
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(c) per Case C-171/03: ${absolutePeriodValue} weeks ${isRetroactive ? 'retroactive ' : ''}calculated, ending on same day of week as event`);
+        const weeksRule = appStrings?.appliedRules?.article32Weeks || 'Article 3(2)(c) applied';
+        result.appliedRules.push(interpolateString(weeksRule, { 
+            periodValue: absolutePeriodValue, 
+            retroactive: isRetroactive ? 'retroactive ' : '' 
+        }));
     } else if (periodType === 'months') {
         if (isRetroactive) {
             // For retroactive calculation, subtract months and handle overflow
@@ -404,7 +449,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             // The end date is the target date itself (already correctly calculated)
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(c) per Case C-171/03: ${absolutePeriodValue} months ${isRetroactive ? 'retroactive ' : ''}calculated, ending on same date as event`);
+        const monthsRule = appStrings?.appliedRules?.article32Months || 'Article 3(2)(c) applied';
+        result.appliedRules.push(interpolateString(monthsRule, { 
+            periodValue: absolutePeriodValue, 
+            retroactive: isRetroactive ? 'retroactive ' : '' 
+        }));
     } else if (periodType === 'years') {
         if (isRetroactive) {
             // For retroactive calculation, subtract years and handle overflow (e.g., Feb 29 in non-leap year)
@@ -434,7 +483,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             // The end date is the target date itself (already correctly calculated)
             endDate.setHours(23, 59, 59, 999);
         }
-        result.appliedRules.push(`Article 3(2)(c) per Case C-171/03: ${absolutePeriodValue} years ${isRetroactive ? 'retroactive ' : ''}calculated, ending on same date as event`);
+        const yearsRule = appStrings?.appliedRules?.article32Years || 'Article 3(2)(c) applied';
+        result.appliedRules.push(interpolateString(yearsRule, { 
+            periodValue: absolutePeriodValue, 
+            retroactive: isRetroactive ? 'retroactive ' : '' 
+        }));
     }
 
     result.initialEndDate = new Date(endDate);
@@ -444,10 +497,14 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         const nextWorkDay = findNextWorkingDay(endDate);
         nextWorkDay.setHours(23, 59, 59, 999);
         endDate = nextWorkDay;
+        const article34Rule = appStrings?.appliedRules?.article34Extension || 'Article 3(4) applied';
+        const article34Details = appStrings?.appliedRules?.article34ExtensionDetails || 'Extension details';
         result.appliedRules.push(
-            'Article 3(4): End date falls on non-working day, extended to next working day',
-            `- Previous end date: ${formatDateTime(result.initialEndDate)}`,
-            `- Extended to: ${formatDateTime(endDate)}`
+            article34Rule,
+            interpolateString(article34Details, { 
+                previousDate: formatDateTime(result.initialEndDate),
+                extendedDate: formatDateTime(endDate)
+            })
         );
     }
 
@@ -503,12 +560,23 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 
                 if (workingDays >= 2) {
                     startDate = prevWorkDay;
+                    const article35Rule = appStrings?.appliedRules?.article35Extension || 'Article 3(5) applied';
+                    const article35Details = appStrings?.appliedRules?.article35ExtensionDetails || 'Extension details';
                     result.appliedRules.push(
-                        'Article 3(5): Period extended backward to ensure at least two working days',
-                        `- Original start date: ${formatDateTime(result.initialEndDate)}`,
-                        `- Extended to: ${formatDate(startDate)}`
+                        interpolateString(article35Rule, { direction: 'backward' }),
+                        interpolateString(article35Details, { 
+                            startOrEnd: 'start',
+                            originalDate: formatDateTime(result.initialEndDate),
+                            extendedDate: formatDate(startDate)
+                        })
                     );
-                    result.explanation.push(`According to Article 3(5), any period of two days or more must include at least two working days. The period only included ${result.workingDaysCount} working day${result.workingDaysCount === 1 ? '' : 's'}, so it has been extended backward to ${formatDate(startDate)} to ensure at least two working days are included.`);
+                    const article35Explanation = appStrings?.articles?.article35Extension || 'Article 3(5) explanation';
+                    result.explanation.push(interpolateString(article35Explanation, {
+                        workingDaysCount: result.workingDaysCount,
+                        plural: result.workingDaysCount === 1 ? '' : 's',
+                        direction: 'backward',
+                        extendedDate: formatDate(startDate)
+                    }));
                 }
             } else {
                 // For forward periods, extend forward to include at least two working days total
@@ -535,12 +603,23 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 endDate = new Date(currentWorkDay);
                 endDate.setHours(23, 59, 59, 999);
                 
+                const article35Rule = appStrings?.appliedRules?.article35Extension || 'Article 3(5) applied';
+                const article35Details = appStrings?.appliedRules?.article35ExtensionDetails || 'Extension details';
                 result.appliedRules.push(
-                    'Article 3(5): Period extended forward to ensure at least two working days',
-                    `- Original end date: ${formatDateTime(result.initialEndDate)}`,
-                    `- Extended to: ${formatDateTime(endDate)}`
+                    interpolateString(article35Rule, { direction: 'forward' }),
+                    interpolateString(article35Details, { 
+                        startOrEnd: 'end',
+                        originalDate: formatDateTime(result.initialEndDate),
+                        extendedDate: formatDateTime(endDate)
+                    })
                 );
-                result.explanation.push(`According to Article 3(5), any period of two days or more must include at least two working days. The period only included ${result.workingDaysCount} working day${result.workingDaysCount === 1 ? '' : 's'}, so it has been extended forward to ${formatDate(endDate)} to ensure at least two working days are included.`);
+                const article35Explanation = appStrings?.articles?.article35Extension || 'Article 3(5) explanation';
+                result.explanation.push(interpolateString(article35Explanation, {
+                    workingDaysCount: result.workingDaysCount,
+                    plural: result.workingDaysCount === 1 ? '' : 's',
+                    direction: 'forward',
+                    extendedDate: formatDate(endDate)
+                }));
             }
         }
     }
@@ -568,17 +647,18 @@ function renderCalendar(result) {
     legend.className = 'calendar-legend';
     
     // Define legend items with their styles and labels
+    const legendLabels = appStrings?.legend || {};
     const legendItems = [
-        { color: '#1a73e8', label: 'Start of period' },
-        { color: '#1557b0', label: 'End of period' },
-        { color: '#f3e5f5', border: '1px dashed #9c27b0', label: 'Event Date' },
-        { background: 'linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%)', border: '1px dashed #9c27b0', label: 'Start + Event Date' },
-        { color: '#e8f0fe', label: 'Working Day' },
-        { color: '#fff3cd', label: 'Holiday' },
-        { color: '#f8f9fa', border: '1px solid #dee2e6', label: 'Weekend' },
-        { border: '1px solid #1a73e8', label: 'In Period' },
-        { border: '1px dashed #1a73e8', label: 'Extension' },
-        { border: '2px solid #dc3545', label: 'Today' }
+        { color: '#1a73e8', label: legendLabels.startOfPeriod || 'Start of period' },
+        { color: '#1557b0', label: legendLabels.endOfPeriod || 'End of period' },
+        { color: '#f3e5f5', border: '1px dashed #9c27b0', label: legendLabels.eventDate || 'Event Date' },
+        { background: 'linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%)', border: '1px dashed #9c27b0', label: legendLabels.startEventDate || 'Start + Event Date' },
+        { color: '#e8f0fe', label: legendLabels.workingDay || 'Working Day' },
+        { color: '#fff3cd', label: legendLabels.holiday || 'Holiday' },
+        { color: '#f8f9fa', border: '1px solid #dee2e6', label: legendLabels.weekend || 'Weekend' },
+        { border: '1px solid #1a73e8', label: legendLabels.inPeriod || 'In Period' },
+        { border: '1px dashed #1a73e8', label: legendLabels.extension || 'Extension' },
+        { border: '2px solid #dc3545', label: legendLabels.today || 'Today' }
     ];
     
     // Create each legend item safely
@@ -769,24 +849,19 @@ function createResultElement(result) {
     // Add the final end date
     const endDateDiv = document.createElement('div');
     endDateDiv.className = 'result-date';
-    endDateDiv.textContent = `End Date: ${formatDateTime(result.finalEndDate)}`;
+    const endDateLabel = appStrings?.ui?.endDateLabel || 'End Date: {endDate}';
+    endDateDiv.textContent = interpolateString(endDateLabel, { endDate: formatDateTime(result.finalEndDate) });
     container.appendChild(endDateDiv);
     
     // Add holiday system information
-    const holidaySystemNames = {
-        'EP': 'European Parliament',
-        'EC': 'European Commission',
-        'AT': 'Austria', 'BE': 'Belgium', 'BG': 'Bulgaria', 'HR': 'Croatia', 'CY': 'Cyprus',
-        'CZ': 'Czech Republic', 'DK': 'Denmark', 'EE': 'Estonia', 'FI': 'Finland', 'FR': 'France',
-        'DE': 'Germany', 'EL': 'Greece', 'HU': 'Hungary', 'IE': 'Ireland', 'IT': 'Italy',
-        'LV': 'Latvia', 'LT': 'Lithuania', 'LU': 'Luxembourg', 'MT': 'Malta', 'NL': 'Netherlands',
-        'PL': 'Poland', 'PT': 'Portugal', 'RO': 'Romania', 'SK': 'Slovakia', 'SI': 'Slovenia',
-        'ES': 'Spain', 'SE': 'Sweden'
-    };
+    const getHolidaySystemNames = () => appStrings?.holidaySystems || {};
     
     const holidaySystemDiv = document.createElement('div');
     holidaySystemDiv.style.cssText = 'font-size: 12px; color: #666; margin-bottom: 10px;';
-    holidaySystemDiv.textContent = `Using ${holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem} public holidays`;
+    const holidaySystemNames = getHolidaySystemNames();
+    const systemName = holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem;
+    const holidayInfo = appStrings?.ui?.holidaySystemInfo || 'Using {systemName} public holidays';
+    holidaySystemDiv.textContent = interpolateString(holidayInfo, { systemName });
     container.appendChild(holidaySystemDiv);
     
     // Add holiday data warning if applicable
@@ -985,47 +1060,34 @@ function generateHolidayWarning(coverage, holidaySystem) {
         return null;
     }
     
-    const holidaySystemNames = {
-        'EP': 'European Parliament',
-        'EC': 'European Commission',
-        'AT': 'Austria', 'BE': 'Belgium', 'BG': 'Bulgaria', 'HR': 'Croatia', 'CY': 'Cyprus',
-        'CZ': 'Czech Republic', 'DK': 'Denmark', 'EE': 'Estonia', 'FI': 'Finland', 'FR': 'France',
-        'DE': 'Germany', 'EL': 'Greece', 'HU': 'Hungary', 'IE': 'Ireland', 'IT': 'Italy',
-        'LV': 'Latvia', 'LT': 'Lithuania', 'LU': 'Luxembourg', 'MT': 'Malta', 'NL': 'Netherlands',
-        'PL': 'Poland', 'PT': 'Portugal', 'RO': 'Romania', 'SK': 'Slovakia', 'SI': 'Slovenia',
-        'ES': 'Spain', 'SE': 'Sweden'
-    };
-    
+    const holidaySystemNames = appStrings?.holidaySystems || {};
     const systemName = holidaySystemNames[holidaySystem] || holidaySystem;
     const missingYearsStr = coverage.missingYears.join(', ');
     const availableYearsStr = coverage.availableYears.length > 0 ? 
         coverage.availableYears.join(', ') : 'none';
     
-    let message = `⚠️ <strong>Public Holiday Data Warning:</strong> `;
+    const isSingle = coverage.missingYears.length === 1;
+    const plural = coverage.missingYears.length > 1 ? 's' : '';
+    
+    let warningTemplate;
     
     if (holidaySystem === 'EP' && coverage.missingYears.length > 0) {
         // Special message for European Parliament partial data
-        if (coverage.missingYears.length === 1) {
-            message += `Complete public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
-        } else {
-            message += `Complete public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
-        }
-        message += `Only New Year week holidays may be included for the missing year${coverage.missingYears.length > 1 ? 's' : ''}. `;
-        message += `Other public holidays are not accounted for. `;
+        warningTemplate = isSingle ? 
+            (appStrings?.holidayWarnings?.epWarningSingle || 'EP warning') :
+            (appStrings?.holidayWarnings?.epWarning || 'EP warning');
     } else {
-        if (coverage.missingYears.length === 1) {
-            message += `Public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
-        } else {
-            message += `Public holiday data for ${systemName} is not available for ${missingYearsStr}. `;
-        }
-        message += `Only Sundays and Saturdays are treated as non-working days for the missing period${coverage.missingYears.length > 1 ? 's' : ''}. `;
+        warningTemplate = isSingle ? 
+            (appStrings?.holidayWarnings?.memberStateWarningSingle || 'Member state warning') :
+            (appStrings?.holidayWarnings?.memberStateWarning || 'Member state warning');
     }
     
-    if (coverage.availableYears.length > 0) {
-        message += `Available data covers: ${availableYearsStr}.`;
-    }
-    
-    return message;
+    return interpolateString(warningTemplate, {
+        systemName,
+        missingYears: missingYearsStr,
+        plural,
+        availableYears: availableYearsStr
+    });
 }
 
 // Function to format date for iCal (YYYYMMDDTHHMMSSZ)
@@ -1103,11 +1165,11 @@ function validateEventName(text) {
     
     for (const pattern of suspiciousPatterns) {
         if (pattern.test(text)) {
-            return { 
-                valid: false, 
-                error: 'Event name contains invalid characters or patterns.',
-                sanitized: ''
-            };
+                    return {
+            valid: false, 
+            error: appStrings?.ui?.validationErrorInvalidChars || 'Invalid characters',
+            sanitized: ''
+        };
         }
     }
     
@@ -1116,7 +1178,7 @@ function validateEventName(text) {
     if (specialCharCount > 3) {
         return {
             valid: false,
-            error: 'Event name contains too many special characters.',
+            error: appStrings?.ui?.validationErrorTooManySpecialChars || 'Too many special characters',
             sanitized: text.replace(/[<>\"&;{}\\]/g, '').trim()
         };
     }
@@ -1125,7 +1187,7 @@ function validateEventName(text) {
     if (text.length > 100) {
         return {
             valid: false,
-            error: 'Event name is too long (maximum 100 characters).',
+            error: appStrings?.ui?.validationErrorTooLong || 'Too long',
             sanitized: text.slice(0, 100)
         };
     }
@@ -1630,7 +1692,7 @@ function copyPermalinkToClipboard() {
     
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(permalink).then(() => {
-            showPermalinkFeedback('Permalink copied to clipboard!');
+            showPermalinkFeedback(appStrings?.ui?.permalinkCopied || 'Copied!');
         }).catch(err => {
             console.error('Failed to copy permalink:', err);
             fallbackCopyToClipboard(permalink);
@@ -1653,14 +1715,14 @@ function fallbackCopyToClipboard(text) {
     try {
         const successful = document.execCommand('copy');
         if (successful) {
-            showPermalinkFeedback('Permalink copied to clipboard!');
+            showPermalinkFeedback(appStrings?.ui?.permalinkCopied || 'Copied!');
         } else {
-            showPermalinkFeedback('Failed to copy permalink. Please copy manually.');
+            showPermalinkFeedback(appStrings?.ui?.permalinkFailed || 'Failed to copy');
             promptManualCopy(text);
         }
     } catch (err) {
         console.error('Fallback copy failed:', err);
-        showPermalinkFeedback('Failed to copy permalink. Please copy manually.');
+        showPermalinkFeedback(appStrings?.ui?.permalinkFailed || 'Failed to copy');
         promptManualCopy(text);
     } finally {
         document.body.removeChild(textArea);
@@ -1852,9 +1914,97 @@ if (typeof module !== 'undefined' && module.exports) {
             });
         }
 
+        // Populate footer and other UI elements from strings
+        populateUIFromStrings();
+        
         // Initial calculation
         updateCalculation();
     });
+
+    // Function to populate UI elements from strings
+    function populateUIFromStrings() {
+        if (!appStrings) return;
+        
+        // Populate footer
+        const footer = document.getElementById('footer-content');
+        if (footer && appStrings.footer) {
+            const disclaimerDiv = document.createElement('div');
+            disclaimerDiv.style.cssText = 'background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ffeeba;';
+            
+            const disclaimerTitle = document.createElement('p');
+            disclaimerTitle.style.cssText = 'margin: 0; font-weight: 500;';
+            disclaimerTitle.textContent = appStrings.footer.disclaimer;
+            disclaimerDiv.appendChild(disclaimerTitle);
+            
+            const disclaimerText = document.createElement('p');
+            disclaimerText.style.cssText = 'margin: 8px 0 0 0;';
+            disclaimerText.textContent = appStrings.footer.disclaimerText;
+            disclaimerDiv.appendChild(disclaimerText);
+            
+            footer.appendChild(disclaimerDiv);
+            
+            // Regulation description
+            const regulationP = document.createElement('p');
+            const regulationLink = '<a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank" rel="noopener">EU Regulation 1182/71</a>';
+            regulationP.innerHTML = interpolateString(appStrings.footer.regulationDescription, { regulationLink });
+            footer.appendChild(regulationP);
+            
+            // Regulation title
+            const regulationTitle = document.createElement('p');
+            regulationTitle.textContent = appStrings.footer.regulationTitle;
+            footer.appendChild(regulationTitle);
+            
+            // Holiday data sources
+            const sourcesTitle = document.createElement('p');
+            sourcesTitle.innerHTML = `<strong>${appStrings.footer.holidayDataSources}</strong>`;
+            footer.appendChild(sourcesTitle);
+            
+            const sourcesList = document.createElement('ul');
+            sourcesList.style.cssText = 'text-align: left; max-width: 600px; margin: 10px auto;';
+            
+            // Member states source
+            const memberStatesLi = document.createElement('li');
+            const memberStatesLink = '<a href="https://eur-lex.europa.eu/eli/C/2024/7517/oj/eng" target="_blank" rel="noopener">OJ C, C/2024/7517, 20.12.2024, ELI: http://data.europa.eu/eli/C/2024/7517/oj</a>';
+            memberStatesLi.innerHTML = interpolateString(appStrings.footer.memberStatesSource, { sourceLink: memberStatesLink });
+            sourcesList.appendChild(memberStatesLi);
+            
+            // EP source
+            const epLi = document.createElement('li');
+            const epLink = '<a href="https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2025_en.pdf" target="_blank" rel="noopener">European Parliament Official Notice: Public holidays and office closing days during 2025, Luxembourg, 25 July 2024 (accessed 06.06.2025)</a>';
+            epLi.innerHTML = interpolateString(appStrings.footer.epSource, { sourceLink: epLink });
+            sourcesList.appendChild(epLi);
+            
+            // EC source
+            const ecLi = document.createElement('li');
+            const ecLink = '<a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219" target="_blank" rel="noopener">OJ C, C/2024/2219, 22.3.2024, ELI: http://data.europa.eu/eli/C/2024/2219/oj</a>';
+            ecLi.innerHTML = interpolateString(appStrings.footer.ecSource, { sourceLink: ecLink });
+            sourcesList.appendChild(ecLi);
+            
+            footer.appendChild(sourcesList);
+            
+            // GitHub link
+            const githubP = document.createElement('p');
+            githubP.innerHTML = '<a href="https://github.com/bdamokos/eu-time-limit-calculator" target="_blank" rel="noopener">' + appStrings.footer.githubLink + '</a>';
+            footer.appendChild(githubP);
+        }
+        
+        // Update UI placeholders and labels
+        const eventTimeHelp = document.querySelector('small');
+        if (eventTimeHelp && appStrings.ui?.eventTimeRequired) {
+            eventTimeHelp.textContent = appStrings.ui.eventTimeRequired;
+        }
+        
+        // Update modal placeholders if modal exists
+        const modalEventNameInput = document.getElementById('modalDeadlineName');
+        if (modalEventNameInput && appStrings.ui?.eventNamePlaceholder) {
+            modalEventNameInput.placeholder = appStrings.ui.eventNamePlaceholder;
+        }
+        
+        const modalEventNameHelp = modalEventNameInput?.parentNode?.querySelector('small');
+        if (modalEventNameHelp && appStrings.ui?.eventNameDescription) {
+            modalEventNameHelp.textContent = appStrings.ui.eventNameDescription;
+        }
+    }
 
     // Function to update the calculation
     function updateCalculation() {

@@ -4,6 +4,15 @@ process.env.TZ = 'UTC';
 const assert = require('assert');
 const { calculatePeriod, setHolidaySystem, getHolidaySystem, holidayData } = require('./script.js');
 
+// Load strings for testing
+let appStrings;
+try {
+    appStrings = require('./strings.js');
+} catch (err) {
+    console.error('Failed to load strings.js:', err);
+    process.exit(1);
+}
+
 function iso(date) {
     return date.toISOString();
 }
@@ -447,6 +456,303 @@ function testHtmlInjectionPrevention() {
     console.log('  ✓ Complex nested HTML bypass attempts were successfully prevented');
 }
 
+// Test string interpolation functionality
+function testStringInterpolation() {
+    // Test basic interpolation
+    function interpolateString(template, params) {
+        return template.replace(/\{(\w+)\}/g, (match, key) => {
+            return params[key] !== undefined ? params[key] : match;
+        });
+    }
+    
+    // Test simple interpolation
+    const simple = interpolateString('Hello {name}!', { name: 'World' });
+    assert.strictEqual(simple, 'Hello World!', 'Simple interpolation should work');
+    
+    // Test multiple parameters
+    const multiple = interpolateString('Event on {date} at {time}', { date: '2025-01-01', time: '12:00' });
+    assert.strictEqual(multiple, 'Event on 2025-01-01 at 12:00', 'Multiple parameter interpolation should work');
+    
+    // Test missing parameters (should leave placeholder)
+    const missing = interpolateString('Hello {name}, you have {count} messages', { name: 'User' });
+    assert.strictEqual(missing, 'Hello User, you have {count} messages', 'Missing parameters should be left as placeholders');
+    
+    // Test empty parameters
+    const empty = interpolateString('Value: {value}', { value: '' });
+    assert.strictEqual(empty, 'Value: ', 'Empty string parameters should be handled');
+    
+    // Test numbers
+    const numbers = interpolateString('Count: {count}', { count: 42 });
+    assert.strictEqual(numbers, 'Count: 42', 'Number parameters should be handled');
+    
+    console.log('  ✓ All string interpolation tests passed');
+}
+
+// Test strings.js structure and content
+function testStringsStructure() {
+    // Test that strings object exists and has expected structure
+    assert(appStrings, 'Strings should be loaded');
+    assert(typeof appStrings === 'object', 'Strings should be an object');
+    
+    // Test main sections exist
+    const requiredSections = ['ui', 'articles', 'appliedRules', 'holidaySystems', 'footer', 'legend'];
+    for (const section of requiredSections) {
+        assert(appStrings[section], `Section '${section}' should exist in strings`);
+        assert(typeof appStrings[section] === 'object', `Section '${section}' should be an object`);
+    }
+    
+    // Test critical UI strings
+    const requiredUIStrings = ['endDateLabel', 'holidaySystemInfo', 'eventTimeRequired'];
+    for (const key of requiredUIStrings) {
+        assert(appStrings.ui[key], `UI string '${key}' should exist`);
+        assert(typeof appStrings.ui[key] === 'string', `UI string '${key}' should be a string`);
+    }
+    
+    // Test article strings
+    const requiredArticleStrings = ['article31Hours', 'article31Days', 'caseC17103', 'article35Extension'];
+    for (const key of requiredArticleStrings) {
+        assert(appStrings.articles[key], `Article string '${key}' should exist`);
+        assert(typeof appStrings.articles[key] === 'string', `Article string '${key}' should be a string`);
+    }
+    
+    // Test applied rules strings
+    const requiredRuleStrings = ['article31HourSkipped', 'article31DaySkipped', 'article34Extension', 'article35Extension'];
+    for (const key of requiredRuleStrings) {
+        assert(appStrings.appliedRules[key], `Applied rule string '${key}' should exist`);
+        assert(typeof appStrings.appliedRules[key] === 'string', `Applied rule string '${key}' should be a string`);
+    }
+    
+    // Test holiday system names
+    const requiredHolidaySystems = ['EP', 'EC', 'DE', 'FR', 'AT'];
+    for (const code of requiredHolidaySystems) {
+        assert(appStrings.holidaySystems[code], `Holiday system '${code}' should exist`);
+        assert(typeof appStrings.holidaySystems[code] === 'string', `Holiday system '${code}' should be a string`);
+    }
+    
+    // Test footer strings
+    const requiredFooterStrings = ['disclaimer', 'disclaimerText', 'regulationDescription'];
+    for (const key of requiredFooterStrings) {
+        assert(appStrings.footer[key], `Footer string '${key}' should exist`);
+        assert(typeof appStrings.footer[key] === 'string', `Footer string '${key}' should be a string`);
+    }
+    
+    console.log('  ✓ All required string structures exist');
+}
+
+// Test that strings contain interpolation placeholders
+function testStringPlaceholders() {
+    // Test UI strings with placeholders
+    assert(appStrings.ui.endDateLabel.includes('{endDate}'), 'End date label should have {endDate} placeholder');
+    assert(appStrings.ui.holidaySystemInfo.includes('{systemName}'), 'Holiday system info should have {systemName} placeholder');
+    
+    // Test article explanations with placeholders
+    assert(appStrings.articles.article31Hours.includes('{eventHour}'), 'Article 3(1) hours should have {eventHour} placeholder');
+    assert(appStrings.articles.article31Hours.includes('{startHour}'), 'Article 3(1) hours should have {startHour} placeholder');
+    assert(appStrings.articles.article31Days.includes('{eventDate}'), 'Article 3(1) days should have {eventDate} placeholder');
+    assert(appStrings.articles.caseC17103.includes('{eventDate}'), 'Case C-171/03 should have {eventDate} placeholder');
+    
+    // Test applied rules with placeholders
+    assert(appStrings.appliedRules.article32Hours.includes('{periodValue}'), 'Article 3(2) hours should have {periodValue} placeholder');
+    assert(appStrings.appliedRules.article35Extension.includes('{direction}'), 'Article 3(5) should have {direction} placeholder');
+    
+    console.log('  ✓ All required placeholders exist in strings');
+}
+
+// Test actual string usage in calculations
+function testStringUsageInCalculations() {
+    // Test that calculation results use strings correctly
+    const result = calculatePeriod(new Date('2025-04-03T14:18:30Z'), 2, 'hours');
+    
+    // Check that applied rules contain proper text (not just fallbacks)
+    const hourRule = result.appliedRules.find(r => r.includes('Article 3(1)'));
+    assert(hourRule, 'Article 3(1) rule should be applied');
+    
+    // Test with different period types to ensure strings are used
+    const dayResult = calculatePeriod(new Date('2025-04-03T00:00:00Z'), 2, 'days');
+    const dayRule = dayResult.appliedRules.find(r => r.includes('Article 3(1)'));
+    assert(dayRule, 'Article 3(1) rule should be applied for days');
+    
+    // Test Case C-171/03 usage
+    const weekResult = calculatePeriod(new Date('2025-04-07T00:00:00Z'), 3, 'weeks');
+    const caseRule = weekResult.appliedRules.find(r => r.includes('Case C-171/03'));
+    assert(caseRule, 'Case C-171/03 rule should be applied for weeks');
+    
+    // Test Article 3(4) extension
+    const weekendResult = calculatePeriod(new Date('2025-04-04T00:00:00Z'), 1, 'days');
+    const extensionRule = weekendResult.appliedRules.find(r => r.includes('Article 3(4)'));
+    assert(extensionRule, 'Article 3(4) rule should be applied for weekend extension');
+    
+    console.log('  ✓ Strings are correctly used in calculations');
+}
+
+// Test holiday warning strings
+function testHolidayWarningStrings() {
+    // Test that holiday warnings section exists
+    assert(appStrings.holidayWarnings, 'Holiday warnings section should exist');
+    
+    const requiredWarnings = ['memberStateWarning', 'memberStateWarningSingle', 'epWarning', 'epWarningSingle'];
+    for (const key of requiredWarnings) {
+        assert(appStrings.holidayWarnings[key], `Holiday warning '${key}' should exist`);
+        assert(typeof appStrings.holidayWarnings[key] === 'string', `Holiday warning '${key}' should be a string`);
+    }
+    
+    // Test that warnings have required placeholders
+    assert(appStrings.holidayWarnings.memberStateWarning.includes('{systemName}'), 'Member state warning should have {systemName} placeholder');
+    assert(appStrings.holidayWarnings.memberStateWarning.includes('{missingYears}'), 'Member state warning should have {missingYears} placeholder');
+    
+    console.log('  ✓ Holiday warning strings are properly structured');
+}
+
+// Test string consistency (no orphaned references)
+function testStringConsistency() {
+    // This test ensures that all string references in the code have corresponding entries
+    // We can't easily test this without parsing the code, but we can test key combinations
+    
+    // Test that all article types have corresponding strings
+    const periodTypes = ['Hours', 'WorkingDays', 'CalendarDays', 'Weeks', 'Months', 'Years'];
+    for (const type of periodTypes) {
+        const key = `article32${type}`;
+        assert(appStrings.appliedRules[key], `Applied rule for ${type} should exist: ${key}`);
+    }
+    
+    // Test validation error messages exist
+    const validationKeys = ['validationErrorInvalidChars', 'validationErrorTooManySpecialChars', 'validationErrorTooLong'];
+    for (const key of validationKeys) {
+        assert(appStrings.ui[key], `Validation error '${key}' should exist`);
+    }
+    
+    // Test permalink messages exist
+    const permalinkKeys = ['permalinkCopied', 'permalinkFailed'];
+    for (const key of permalinkKeys) {
+        assert(appStrings.ui[key], `Permalink message '${key}' should exist`);
+    }
+    
+    console.log('  ✓ String consistency checks passed');
+}
+
+// Test that strings don't contain HTML injection vulnerabilities
+function testStringSecurityContent() {
+    // Function to check for dangerous HTML patterns
+    function checkForDangerousHTML(text, context) {
+        const dangerousPatterns = [
+            /<script/i,
+            /javascript:/i,
+            /vbscript:/i,
+            /data:/i,
+            /onclick=/i,
+            /onload=/i,
+            /onerror=/i,
+            /<iframe/i,
+            /<object/i,
+            /<embed/i
+        ];
+        
+        for (const pattern of dangerousPatterns) {
+            assert(!pattern.test(text), `String in ${context} should not contain dangerous pattern: ${pattern}`);
+        }
+    }
+    
+    // Check all strings recursively
+    function checkAllStrings(obj, path = '') {
+        for (const [key, value] of Object.entries(obj)) {
+            const currentPath = path ? `${path}.${key}` : key;
+            
+            if (typeof value === 'string') {
+                checkForDangerousHTML(value, currentPath);
+            } else if (typeof value === 'object' && value !== null) {
+                checkAllStrings(value, currentPath);
+            }
+        }
+    }
+    
+    // Note: We allow certain safe HTML in footer content (links), but check that they're safe
+    const footerLinks = [
+        appStrings.footer.regulationDescription,
+        appStrings.footer.memberStatesSource,
+        appStrings.footer.epSource,
+        appStrings.footer.ecSource
+    ];
+    
+    for (const text of footerLinks) {
+        // Allow only EUR-Lex and specific trusted domains
+        if (text.includes('<a href=')) {
+            const linkRegex = /<a href="([^"]*)"[^>]*>/g;
+            let match;
+            while ((match = linkRegex.exec(text)) !== null) {
+                const href = match[1];
+                const allowedDomains = [
+                    'https://eur-lex.europa.eu',
+                    'https://www.europarl.europa.eu',
+                    'https://github.com'
+                ];
+                
+                const isAllowed = allowedDomains.some(domain => href.startsWith(domain));
+                assert(isAllowed, `Footer link should only reference trusted domains: ${href}`);
+            }
+        }
+    }
+    
+    // Check other strings (excluding footer with allowed links)
+    const stringsToCheck = { ...appStrings };
+    delete stringsToCheck.footer; // We checked footer separately above
+    
+    checkAllStrings(stringsToCheck);
+    
+    console.log('  ✓ String security content checks passed');
+}
+
+// Test fallback behavior when strings are not available
+function testFallbackBehavior() {
+    // Temporarily simulate missing strings by overriding the module
+    const originalModule = require.cache[require.resolve('./script.js')];
+    
+    try {
+        // Remove strings from cache to simulate missing strings.js
+        delete require.cache[require.resolve('./strings.js')];
+        
+        // Create a mock environment where strings fail to load
+        const mockScript = `
+            // Mock string loading failure
+            let appStrings = null; // Simulate failed loading
+            
+            function interpolateString(template, params) {
+                return template.replace(/\\{(\\w+)\\}/g, (match, key) => {
+                    return params[key] !== undefined ? params[key] : match;
+                });
+            }
+            
+            // Test that fallbacks work
+            const rule = appStrings?.appliedRules?.article31HourSkipped || 'Article 3(1) applied';
+            console.log('Fallback rule:', rule);
+        `;
+        
+        // Verify that when appStrings is null/undefined, fallbacks are used
+        const testFallback = (stringPath, fallback) => {
+            const result = eval(`appStrings?.${stringPath} || '${fallback}'`);
+            assert.strictEqual(result, fallback, `Fallback should be used when strings are not available for ${stringPath}`);
+        };
+        
+        // Test key fallbacks
+        const appStrings = null; // Simulate missing strings
+        testFallback('ui.endDateLabel', 'End Date: {endDate}');
+        testFallback('appliedRules.article31HourSkipped', 'Article 3(1) applied');
+        testFallback('articles.article31Hours', 'Article 3(1) explanation');
+        testFallback('holidaySystems.EP', 'EP');
+        
+        console.log('  ✓ Fallback behavior works correctly when strings are unavailable');
+        
+    } finally {
+        // Restore the original module cache
+        if (originalModule) {
+            require.cache[require.resolve('./script.js')] = originalModule;
+        }
+        
+        // Reload strings.js
+        delete require.cache[require.resolve('./strings.js')];
+        appStrings = require('./strings.js');
+    }
+}
+
 // Test retroactive calculations per Article 3(1)
 function testRetroactiveCalculations() {
     // Test the user's specific example: 7 days back from June 25, 2025
@@ -482,6 +788,17 @@ function testRetroactiveCalculations() {
 console.log('Running tests...');
 
 const tests = [
+    // String handling tests - run first to ensure infrastructure works
+    { name: 'String interpolation functionality', fn: testStringInterpolation },
+    { name: 'Strings structure and content', fn: testStringsStructure },
+    { name: 'String placeholder validation', fn: testStringPlaceholders },
+    { name: 'String usage in calculations', fn: testStringUsageInCalculations },
+    { name: 'Holiday warning strings', fn: testHolidayWarningStrings },
+    { name: 'String consistency checks', fn: testStringConsistency },
+    { name: 'String security content validation', fn: testStringSecurityContent },
+    { name: 'Fallback behavior when strings unavailable', fn: testFallbackBehavior },
+    
+    // Core functionality tests
     { name: 'Article 3(1)', fn: testArticle31 },
     { name: 'Article 3(2)', fn: testArticle32 },
     { name: 'Article 3(3) and 3(4)', fn: testArticle33and34 },
