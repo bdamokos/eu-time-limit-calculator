@@ -278,7 +278,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         // Article 3(2)(c) takes precedence and the period runs from the event day itself
         startDate.setHours(0, 0, 0, 0);
         result.appliedRules.push('Case C-171/03: For weeks/months/years, period starts from the event day itself (Article 3(2)(c) takes precedence over Article 3(1))');
-        result.explanation.push(`According to <a href="https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:62003CJ0171" target="_blank">Case C-171/03</a>, for periods expressed in weeks, months, or years, Article 3(2)(c) takes precedence over Article 3(1). The period starts from the event day itself (${formatDate(startDate)}).`);
+        result.explanation.push(`According to <a href="https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:62003CJ0171" target="_blank" rel="noopener">Case C-171/03</a>, for periods expressed in weeks, months, or years, Article 3(2)(c) takes precedence over Article 3(1). The period starts from the event day itself (${formatDate(startDate)}).`);
     } else {
         if (isRetroactive) {
             startDate.setHours(0, 0, 0, 0);
@@ -1318,10 +1318,10 @@ function handleModalExport(exportType, format) {
             downloadICalFile(icalContent, filename);
         } else if (format === 'google') {
             const googleLink = generateGoogleCalendarLink(window.currentCalculationResult, safeDeadlineName, periodDescription, true);
-            window.open(googleLink, '_blank');
+            window.open(googleLink, '_blank', 'noopener');
         } else if (format === 'outlook') {
             const outlookLink = generateOutlookWebLink(window.currentCalculationResult, safeDeadlineName, periodDescription, true);
-            window.open(outlookLink, '_blank');
+            window.open(outlookLink, '_blank', 'noopener');
         }
     } else if (exportType === 'period') {
         if (format === 'ical') {
@@ -1330,10 +1330,10 @@ function handleModalExport(exportType, format) {
             downloadICalFile(icalContent, filename);
         } else if (format === 'google') {
             const googleLink = generateGoogleCalendarLink(window.currentCalculationResult, safeDeadlineName, periodDescription, false);
-            window.open(googleLink, '_blank');
+            window.open(googleLink, '_blank', 'noopener');
         } else if (format === 'outlook') {
             const outlookLink = generateOutlookWebLink(window.currentCalculationResult, safeDeadlineName, periodDescription, false);
-            window.open(outlookLink, '_blank');
+            window.open(outlookLink, '_blank', 'noopener');
         }
     }
     
