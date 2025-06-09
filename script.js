@@ -745,12 +745,27 @@ function isSameDay(date1, date2) {
            date1.getDate() === date2.getDate();
 }
 
-// Update the formatResult function to return the HTML string
-function formatResult(result) {
-    let output = '<div class="result-container">';
+// HTML escaping function to prevent XSS
+function escapeHtml(text) {
+    if (text == null) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Safe DOM creation function
+function createResultElement(result) {
+    const container = document.createElement('div');
+    container.className = 'result-container';
 
     // Add the final end date
-    output += `<div class="result-date">End Date: ${formatDateTime(result.finalEndDate)}</div>`;
+    const endDateDiv = document.createElement('div');
+    endDateDiv.className = 'result-date';
+    endDateDiv.textContent = `End Date: ${formatDateTime(result.finalEndDate)}`;
+    container.appendChild(endDateDiv);
     
     // Add holiday system information
     const holidaySystemNames = {
@@ -764,19 +779,65 @@ function formatResult(result) {
         'ES': 'Spain', 'SE': 'Sweden'
     };
     
-    output += `<div style="font-size: 12px; color: #666; margin-bottom: 10px;">Using ${holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem} public holidays</div>`;
+    const holidaySystemDiv = document.createElement('div');
+    holidaySystemDiv.style.cssText = 'font-size: 12px; color: #666; margin-bottom: 10px;';
+    holidaySystemDiv.textContent = `Using ${holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem} public holidays`;
+    container.appendChild(holidaySystemDiv);
     
     // Add holiday data warning if applicable
     if (result.holidayDataWarning) {
-        output += `<div class="holiday-warning" style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 14px;">${result.holidayDataWarning}</div>`;
+        const warningDiv = document.createElement('div');
+        warningDiv.className = 'holiday-warning';
+        warningDiv.style.cssText = 'background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 14px;';
+        // The warning message may contain HTML links, so we need to safely parse it
+        // For now, we'll escape everything and only allow specific safe HTML patterns
+        const safeWarning = result.holidayDataWarning.replace(/⚠️ <strong>([^<]*)<\/strong>: /g, '⚠️ $1: ');
+        warningDiv.textContent = safeWarning.replace(/<[^>]*>/g, ''); // Strip all HTML tags for safety
+        container.appendChild(warningDiv);
     }
     
     // Add explanation
-    output += '<div class="result-explanation">';
+    const explanationDiv = document.createElement('div');
+    explanationDiv.className = 'result-explanation';
     
     // Step 1: Always explain Article 3(1)
     if (result.explanation.length > 0 && result.explanation[0].includes('Article 3(1)')) {
-        output += result.explanation[0];
+        const para1 = document.createElement('span');
+        // The explanation may contain links, so we need to handle them safely
+        const explanation = result.explanation[0];
+        if (explanation.includes('<a href=')) {
+            // Parse links safely - only allow specific EUR-Lex links
+            const linkRegex = /<a href="(https:\/\/eur-lex\.europa\.eu[^"]*)"[^>]*>([^<]*)<\/a>/g;
+            let lastIndex = 0;
+            let match;
+            
+            while ((match = linkRegex.exec(explanation)) !== null) {
+                // Add text before the link
+                if (match.index > lastIndex) {
+                    const textNode = document.createTextNode(explanation.substring(lastIndex, match.index));
+                    para1.appendChild(textNode);
+                }
+                
+                // Create safe link
+                const link = document.createElement('a');
+                link.href = match[1]; // Already validated by regex to be EUR-Lex domain
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = match[2];
+                para1.appendChild(link);
+                
+                lastIndex = match.index + match[0].length;
+            }
+            
+            // Add remaining text
+            if (lastIndex < explanation.length) {
+                const textNode = document.createTextNode(explanation.substring(lastIndex));
+                para1.appendChild(textNode);
+            }
+        } else {
+            para1.textContent = explanation;
+        }
+        explanationDiv.appendChild(para1);
     }
     
     // Check which rules were applied
@@ -789,32 +850,47 @@ function formatResult(result) {
         
         if (article34Applied) {
             // For Article 3(4), the final end date is the extended date
-            output += `<br>The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${formatDate(result.finalEndDate)}).`;
+            const br = document.createElement('br');
+            explanationDiv.appendChild(br);
+            const para2 = document.createElement('span');
+            para2.textContent = `The original end date (${initialDateStr}) falls on a non-working day, so according to Article 3(4), the period has been extended to the next working day (${formatDate(result.finalEndDate)}).`;
+            explanationDiv.appendChild(para2);
         }
     }
     
     // Step 3: Explain Article 3(5) if applied
     if (article35Applied && result.explanation.find(exp => exp.includes('Article 3(5)'))) {
-        output += `<br>${result.explanation.find(exp => exp.includes('Article 3(5)'))}`;
+        const br = document.createElement('br');
+        explanationDiv.appendChild(br);
+        const para3 = document.createElement('span');
+        para3.textContent = result.explanation.find(exp => exp.includes('Article 3(5)'));
+        explanationDiv.appendChild(para3);
     }
     
-    output += '</div>';
+    container.appendChild(explanationDiv);
     
     // Add calendar export section
-    output += `
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; text-align: center;">
-            <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                <button onclick="openCalendarModal()" class="calendar-export-trigger">
-                    📅 Export to Calendar
-                </button>
-                <button onclick="copyPermalinkToClipboard()" class="calendar-export-trigger" title="Copy shareable link">
-                    🔗 Share Link
-                </button>
-            </div>
-        </div>
-    `;
+    const exportDiv = document.createElement('div');
+    exportDiv.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; text-align: center;';
     
-    output += '</div>';
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = 'display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;';
+    
+    const calendarBtn = document.createElement('button');
+    calendarBtn.className = 'calendar-export-trigger';
+    calendarBtn.textContent = '📅 Export to Calendar';
+    calendarBtn.onclick = openCalendarModal;
+    buttonContainer.appendChild(calendarBtn);
+    
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'calendar-export-trigger';
+    shareBtn.title = 'Copy shareable link';
+    shareBtn.textContent = '🔗 Share Link';
+    shareBtn.onclick = copyPermalinkToClipboard;
+    buttonContainer.appendChild(shareBtn);
+    
+    exportDiv.appendChild(buttonContainer);
+    container.appendChild(exportDiv);
 
     // Store the current result for export functions
     window.currentCalculationResult = result;
@@ -822,7 +898,7 @@ function formatResult(result) {
     // Render the calendar visualization
     renderCalendar(result);
     
-    return output;
+    return container;
 }
 
 // Function to get the years covered by holiday data for a given system
@@ -1430,7 +1506,9 @@ function handleSubmit(event) {
     }
     
     const result = calculatePeriod(eventDateTime, periodValue, periodType);
-    document.getElementById('result').innerHTML = formatResult(result);
+    const resultContainer = document.getElementById('result');
+    resultContainer.innerHTML = ''; // Clear previous content
+    resultContainer.appendChild(createResultElement(result));
 }
 
 // Permalink functionality
@@ -1793,7 +1871,9 @@ if (typeof module !== 'undefined' && module.exports) {
         }
         
         const result = calculatePeriod(eventDateTime, periodValue, periodType);
-        document.getElementById('result').innerHTML = formatResult(result);
+        const resultContainer = document.getElementById('result');
+        resultContainer.innerHTML = ''; // Clear previous content
+        resultContainer.appendChild(createResultElement(result));
         
         // Update URL to reflect current calculation
         updateUrlFromForm();
