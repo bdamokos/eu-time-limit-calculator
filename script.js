@@ -756,16 +756,7 @@ function isSameDay(date1, date2) {
            date1.getDate() === date2.getDate();
 }
 
-// HTML escaping function to prevent XSS
-function escapeHtml(text) {
-    if (text == null) return '';
-    return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
+
 
 // Safe DOM creation function
 function createResultElement(result) {
