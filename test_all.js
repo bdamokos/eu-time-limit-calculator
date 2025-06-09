@@ -368,6 +368,13 @@ function testHtmlInjectionPrevention() {
     
     // Then strip ALL HTML tags to ensure no script or other dangerous content
     cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
+
+    let previousWarning;
+    do {previousWarning = cleanWarning;
+
+        cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+        cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
+    } while (previousWarning !== cleanWarning);
     
     // Verify that all dangerous content has been removed
     assert(!cleanWarning.includes('<script'), 'Warning should not contain script tags');

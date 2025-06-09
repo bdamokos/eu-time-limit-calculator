@@ -811,6 +811,13 @@ function createResultElement(result) {
         
         // Then strip ALL HTML tags to ensure no script or other dangerous content
         cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
+
+        let previousWarning;
+        do {previousWarning = cleanWarning;
+
+            cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+            cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
+        } while (previousWarning !== cleanWarning);
         
         // Use textContent to safely set the warning text (no HTML interpretation)
         warningDiv.textContent = cleanWarning;
