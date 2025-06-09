@@ -801,10 +801,19 @@ function createResultElement(result) {
         const warningDiv = document.createElement('div');
         warningDiv.className = 'holiday-warning';
         warningDiv.style.cssText = 'background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 14px;';
-        // The warning message may contain HTML links, so we need to safely parse it
-        // For now, we'll escape everything and only allow specific safe HTML patterns
-        const safeWarning = result.holidayDataWarning.replace(/⚠️ <strong>([^<]*)<\/strong>: /g, '⚠️ $1: ');
-        warningDiv.textContent = safeWarning.replace(/<[^>]*>/g, ''); // Strip all HTML tags for safety
+        
+        // Safely extract and display the warning message by completely stripping all HTML
+        // This prevents any potential HTML injection vulnerabilities
+        let cleanWarning = result.holidayDataWarning;
+        
+        // First, extract content from any <strong> tags safely
+        cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+        
+        // Then strip ALL HTML tags to ensure no script or other dangerous content
+        cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
+        
+        // Use textContent to safely set the warning text (no HTML interpretation)
+        warningDiv.textContent = cleanWarning;
         container.appendChild(warningDiv);
     }
     
