@@ -1458,7 +1458,10 @@ function generatePermalink(includeEventName = false) {
     // Add event name if requested and available
     if (includeEventName) {
         const eventName = document.getElementById('modalDeadlineName')?.value;
-        if (eventName) params.set('name', eventName);
+        if (eventName) {
+            const safeName = sanitizeUrlText(eventName);
+            params.set('name', safeName);
+        }
     }
     
     const baseUrl = window.location.origin + window.location.pathname;
