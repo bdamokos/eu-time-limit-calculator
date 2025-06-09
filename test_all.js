@@ -323,6 +323,38 @@ function testDaysVsWeeksCalculation() {
     console.log(`  ✓ 7 days and 1 week from same date use different calculation methods`);
 }
 
+// Security tests for sanitization functions
+function testHolidaySystemSanitization() {
+    // Test valid holiday system
+    setHolidaySystem('DE');
+    assert.strictEqual(getHolidaySystem(), 'DE', 'Valid system (DE) should be accepted');
+
+    // Test invalid holiday system - should default to EP
+    setHolidaySystem('INVALID_SYSTEM');
+    assert.strictEqual(getHolidaySystem(), 'EP', 'Invalid system should default to EP');
+
+    // Test XSS injection attempt
+    setHolidaySystem('<script>alert("xss")</script>');
+    assert.strictEqual(getHolidaySystem(), 'EP', 'XSS attempt should default to EP');
+
+    // Test another valid system
+    setHolidaySystem('FR');
+    assert.strictEqual(getHolidaySystem(), 'FR', 'Valid system (FR) should be accepted');
+
+    // Test empty string
+    setHolidaySystem('');
+    assert.strictEqual(getHolidaySystem(), 'EP', 'Empty string should default to EP');
+
+    // Test null/undefined
+    setHolidaySystem(null);
+    assert.strictEqual(getHolidaySystem(), 'EP', 'Null value should default to EP');
+
+    setHolidaySystem(undefined);
+    assert.strictEqual(getHolidaySystem(), 'EP', 'Undefined value should default to EP');
+
+    console.log('  ✓ All holiday system sanitization tests passed');
+}
+
 console.log('Running tests...');
 
 const tests = [
@@ -339,7 +371,8 @@ const tests = [
     { name: 'Case C-171/03: Months calculation', fn: testCaseC17103MonthsCalculation },
     { name: 'Case C-171/03: Years calculation', fn: testCaseC17103YearsCalculation },
     { name: 'Month-end edge cases (Article 3(2)(c))', fn: testMonthEndEdgeCases },
-    { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation }
+    { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation },
+    { name: 'Holiday system sanitization (Security)', fn: testHolidaySystemSanitization }
 ];
 
 const failures = [];
