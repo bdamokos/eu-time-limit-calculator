@@ -117,6 +117,18 @@ const holidayData = {
 let selectedHolidaySystem = 'EP';
 let dateFormat = 'dmy-text';
 
+// Sanitize holiday system value to prevent injection via URL parameters or cookies
+function sanitizeHolidaySystem(value) {
+    const allowed = Object.keys(holidayData);
+    return allowed.includes(value) ? value : 'EP';
+}
+
+// Sanitize date format from allowed list
+function sanitizeDateFormat(value) {
+    const allowedFormats = ['mdy-slash', 'dmy-slash', 'iso', 'long', 'dmy', 'dmy-text'];
+    return allowedFormats.includes(value) ? value : 'dmy-text';
+}
+
 function getCookie(name) {
     if (typeof document === 'undefined') return null;
     const value = `; ${document.cookie}`;
@@ -144,7 +156,7 @@ if (typeof document !== 'undefined') {
     // Load date format from URL or cookie
     const urlDateFormat = urlParams.get('format');
     if (urlDateFormat) {
-        dateFormat = urlDateFormat;
+        dateFormat = sanitizeDateFormat(urlDateFormat);
     } else {
         const savedDateFormat = getCookie('dateFormat');
         if (savedDateFormat) {
@@ -154,7 +166,7 @@ if (typeof document !== 'undefined') {
             } else if (savedDateFormat === 'mdy') {
                 dateFormat = 'mdy-slash';
             } else {
-                dateFormat = savedDateFormat;
+                dateFormat = sanitizeDateFormat(savedDateFormat);
             }
         }
     }
@@ -162,11 +174,11 @@ if (typeof document !== 'undefined') {
     // Load holiday system from URL or cookie
     const urlHolidaySystem = urlParams.get('holidays');
     if (urlHolidaySystem) {
-        selectedHolidaySystem = urlHolidaySystem;
+        selectedHolidaySystem = sanitizeHolidaySystem(urlHolidaySystem);
     } else {
         const savedHolidaySystem = getCookie('holidaySystem');
         if (savedHolidaySystem) {
-            selectedHolidaySystem = savedHolidaySystem;
+            selectedHolidaySystem = sanitizeHolidaySystem(savedHolidaySystem);
         }
     }
 }
@@ -1530,8 +1542,8 @@ function generatePermalink(includeEventName = false) {
     if (periodType) params.set('type', periodType);
     
     // Add settings
-    if (selectedHolidaySystem !== 'EP') params.set('holidays', selectedHolidaySystem);
-    if (dateFormat !== 'dmy-text') params.set('format', dateFormat);
+    if (selectedHolidaySystem !== 'EP') params.set('holidays', sanitizeHolidaySystem(selectedHolidaySystem));
+    if (dateFormat !== 'dmy-text') params.set('format', sanitizeDateFormat(dateFormat));
     
     // Add event name if requested and available
     if (includeEventName) {
@@ -1698,7 +1710,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
         calculatePeriod,
         setHolidaySystem: function(system) {
-            selectedHolidaySystem = system;
+            selectedHolidaySystem = sanitizeHolidaySystem(system);
         },
         getHolidaySystem: function() {
             return selectedHolidaySystem;
@@ -1786,7 +1798,7 @@ if (typeof module !== 'undefined' && module.exports) {
         if (holidaySystemSelect) {
             holidaySystemSelect.value = selectedHolidaySystem;
             holidaySystemSelect.addEventListener('change', function() {
-                selectedHolidaySystem = this.value;
+                selectedHolidaySystem = sanitizeHolidaySystem(this.value);
                 setCookie('holidaySystem', selectedHolidaySystem, 365);
                 updateCalculation();
             });
