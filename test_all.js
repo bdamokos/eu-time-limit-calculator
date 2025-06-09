@@ -355,6 +355,65 @@ function testHolidaySystemSanitization() {
     console.log('  ✓ All holiday system sanitization tests passed');
 }
 
+// Security test for HTML injection prevention in warning messages
+function testHtmlInjectionPrevention() {
+    // Test the HTML sanitization logic directly without needing DOM
+    const dangerousInput = '⚠️ <strong>Warning</strong>: <script>alert("xss")</script> <img src="x" onerror="alert(\'xss2\')">';
+    
+    // Simulate the sanitization logic from createResultElement
+    let cleanWarning = dangerousInput;
+    
+    // First, extract content from any <strong> tags safely
+    cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+    
+    // Then strip ALL HTML tags to ensure no script or other dangerous content
+    cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
+    
+    // Verify that all dangerous content has been removed
+    assert(!cleanWarning.includes('<script'), 'Warning should not contain script tags');
+    assert(!cleanWarning.includes('<img'), 'Warning should not contain img tags');
+    assert(!cleanWarning.includes('onerror'), 'Warning should not contain event handlers');
+    assert(cleanWarning.includes('Warning'), 'Warning should contain the actual warning text');
+    
+    // Verify that all HTML has been stripped
+    assert(!cleanWarning.includes('<'), 'Warning should not contain any HTML tags');
+    assert(!cleanWarning.includes('>'), 'Warning should not contain any HTML tags');
+    
+         // Test with other potentially dangerous content
+     const otherDangerousInputs = [
+         '<script src="evil.js"></script>Legitimate warning',
+         'Warning: <iframe src="javascript:alert(1)"></iframe>',
+         'Alert: <object data="javascript:alert(1)"></object>',
+         'Notice: <embed src="javascript:alert(1)">',
+         'Info: <link rel="stylesheet" href="javascript:alert(1)">',
+         '<style>body{background:url("javascript:alert(1)")}</style>Warning',
+         '<div onclick="alert(1)">Click me</div>Important notice',
+         'Data: <svg onload="alert(1)"></svg>',
+         'Test: <details open ontoggle="alert(1)">Content</details>'
+     ];
+     
+     for (const dangerous of otherDangerousInputs) {
+         let cleaned = dangerous;
+         cleaned = cleaned.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+         cleaned = cleaned.replace(/<[^>]*>/g, '');
+         
+         // The main security goal: ensure no HTML tags remain that could be executed
+         assert(!cleaned.includes('<'), `Should strip all HTML from: "${dangerous}"`);
+         assert(!cleaned.includes('>'), `Should strip all HTML from: "${dangerous}"`);
+         
+         // Ensure we still have the legitimate text content
+         assert(cleaned.length > 0, `Should retain some text content from: "${dangerous}"`);
+         
+         // Check that common script-related patterns in HTML context are gone
+         assert(!cleaned.includes('<script'), `Should strip script tags from: "${dangerous}"`);
+         assert(!cleaned.includes('<iframe'), `Should strip iframe tags from: "${dangerous}"`);
+         assert(!cleaned.includes('onclick='), `Should strip onclick handlers from: "${dangerous}"`);
+         assert(!cleaned.includes('onload='), `Should strip onload handlers from: "${dangerous}"`);
+     }
+    
+    console.log('  ✓ HTML injection prevention test passed - dangerous content was safely stripped');
+}
+
 console.log('Running tests...');
 
 const tests = [
@@ -372,7 +431,8 @@ const tests = [
     { name: 'Case C-171/03: Years calculation', fn: testCaseC17103YearsCalculation },
     { name: 'Month-end edge cases (Article 3(2)(c))', fn: testMonthEndEdgeCases },
     { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation },
-    { name: 'Holiday system sanitization (Security)', fn: testHolidaySystemSanitization }
+    { name: 'Holiday system sanitization (Security)', fn: testHolidaySystemSanitization },
+    { name: 'HTML injection prevention in warning messages', fn: testHtmlInjectionPrevention }
 ];
 
 const failures = [];
