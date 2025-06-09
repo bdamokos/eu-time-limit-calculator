@@ -282,9 +282,10 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     if (periodType === 'hours') {
         startDate.setMinutes(0, 0, 0);
         if (isRetroactive) {
-            startDate.setHours(startDate.getHours());
-            result.appliedRules.push('Article 3(1): Hour of event not counted, starting from current hour for retroactive calculation');
-            result.explanation.push(`According to Article 3(1), for retroactive calculation, the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the current hour (${startDate.getHours()}:00) and counts backwards.`);
+            startDate.setHours(startDate.getHours() - 1);
+            startDate.setMinutes(59, 59, 999); // Start from end of previous hour
+            result.appliedRules.push('Article 3(1): Hour of event not counted, starting from end of previous hour for retroactive calculation');
+            result.explanation.push(`According to Article 3(1), for retroactive calculation, the hour of the event (${eventDateTime.getHours()}:00) is not counted. The period starts from the end of the previous hour (${startDate.getHours()}:59) and counts backwards.`);
         } else {
             startDate.setHours(startDate.getHours() + 1);
             result.appliedRules.push('Article 3(1): Hour of event not counted, starting from next hour');
@@ -298,9 +299,11 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         result.explanation.push(`According to <a href="https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:62003CJ0171" target="_blank" rel="noopener">Case C-171/03</a>, for periods expressed in weeks, months, or years, Article 3(2)(c) takes precedence over Article 3(1). The period starts from the event day itself (${formatDate(startDate)}).`);
     } else {
         if (isRetroactive) {
-            startDate.setHours(0, 0, 0, 0);
-            result.appliedRules.push('Article 3(1): Day of event not counted, starting from beginning of current day for retroactive calculation');
-            result.explanation.push(`According to Article 3(1), for retroactive calculation, the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the beginning of the current day and counts backwards.`);
+            // For retroactive calculations, skip the event day by starting from the previous day
+            startDate.setDate(startDate.getDate() - 1);
+            startDate.setHours(23, 59, 59, 999); // Start from end of previous day
+            result.appliedRules.push('Article 3(1): Day of event not counted, starting from end of previous day for retroactive calculation');
+            result.explanation.push(`According to Article 3(1), for retroactive calculation, the day of the event (${formatDate(eventDateTime)}) is not counted. The period starts from the end of the previous day (${formatDate(startDate)}) and counts backwards.`);
         } else {
             startDate.setDate(startDate.getDate() + 1);
             startDate.setHours(0, 0, 0, 0);

@@ -380,55 +380,55 @@ function testHtmlInjectionPrevention() {
     // Verify that all HTML has been stripped
     assert(!cleanWarning.includes('<'), 'Warning should not contain any HTML tags');
     assert(!cleanWarning.includes('>'), 'Warning should not contain any HTML tags');
+        
+    // Test with other potentially dangerous content
+    const otherDangerousInputs = [
+        '<script src="evil.js"></script>Legitimate warning',
+        'Warning: <iframe src="javascript:alert(1)"></iframe>',
+        'Alert: <object data="javascript:alert(1)"></object>',
+        'Notice: <embed src="javascript:alert(1)">',
+        'Info: <link rel="stylesheet" href="javascript:alert(1)">',
+        '<style>body{background:url("javascript:alert(1)")}</style>Warning',
+        '<div onclick="alert(1)">Click me</div>Important notice',
+        'Data: <svg onload="alert(1)"></svg>',
+        'Test: <details open ontoggle="alert(1)">Content</details>',
+        // Test nested and malformed HTML that could bypass weaker sanitization
+        '<scrip<strong>t>alert(1)</script>',
+        '<strong><script>alert(1)</script></strong>',
+        '<script><strong>evil</strong>alert(1)</script>',
+        '<<script>alert(1)</script>>',
+        '<script><!--<strong>--></strong>alert(1)</script>',
+        '<strong><script></strong>alert(1)</script>',
+        '<scri<strong></strong>pt>alert(1)</script>'
+    ];
     
-         // Test with other potentially dangerous content
-     const otherDangerousInputs = [
-         '<script src="evil.js"></script>Legitimate warning',
-         'Warning: <iframe src="javascript:alert(1)"></iframe>',
-         'Alert: <object data="javascript:alert(1)"></object>',
-         'Notice: <embed src="javascript:alert(1)">',
-         'Info: <link rel="stylesheet" href="javascript:alert(1)">',
-         '<style>body{background:url("javascript:alert(1)")}</style>Warning',
-         '<div onclick="alert(1)">Click me</div>Important notice',
-         'Data: <svg onload="alert(1)"></svg>',
-         'Test: <details open ontoggle="alert(1)">Content</details>',
-         // Test nested and malformed HTML that could bypass weaker sanitization
-         '<scrip<strong>t>alert(1)</script>',
-         '<strong><script>alert(1)</script></strong>',
-         '<script><strong>evil</strong>alert(1)</script>',
-         '<<script>alert(1)</script>>',
-         '<script><!--<strong>--></strong>alert(1)</script>',
-         '<strong><script></strong>alert(1)</script>',
-         '<scri<strong></strong>pt>alert(1)</script>'
-     ];
-     
-     for (const dangerous of otherDangerousInputs) {
-         let cleaned = dangerous;
-         // Use the same simplified sanitization logic
-         let previousCleaned;
-         do {
-             previousCleaned = cleaned;
-             cleaned = cleaned.replace(/<[^>]*>/g, '');
-         } while (previousCleaned !== cleaned);
-         
-         // The main security goal: ensure no HTML tags remain that could be executed
-         // We check for '<' characters which could start HTML tags
-         // Note: '>' characters in plain text are harmless, so we don't need to check for them
-         assert(!cleaned.includes('<'), `Should strip all HTML from: "${dangerous}"`);
-         
-         // Ensure we still have the legitimate text content
-         assert(cleaned.length > 0, `Should retain some text content from: "${dangerous}"`);
-         
-         // Check that common script-related patterns in HTML context are gone
-         assert(!cleaned.includes('<script'), `Should strip script tags from: "${dangerous}"`);
-         assert(!cleaned.includes('<iframe'), `Should strip iframe tags from: "${dangerous}"`);
-         assert(!cleaned.includes('onclick='), `Should strip onclick handlers from: "${dangerous}"`);
-         assert(!cleaned.includes('onload='), `Should strip onload handlers from: "${dangerous}"`);
-         
-         // Additional checks for the challenging nested/malformed cases
-         // Note: We don't check for 'alert(' or 'javascript:' as text because once HTML tags are stripped,
-         // these become harmless text content. The security concern is only when they're in executable HTML contexts.
-     }
+    for (const dangerous of otherDangerousInputs) {
+        let cleaned = dangerous;
+        // Use the same simplified sanitization logic
+        let previousCleaned;
+        do {
+            previousCleaned = cleaned;
+            cleaned = cleaned.replace(/<[^>]*>/g, '');
+        } while (previousCleaned !== cleaned);
+        
+        // The main security goal: ensure no HTML tags remain that could be executed
+        // We check for '<' characters which could start HTML tags
+        // Note: '>' characters in plain text are harmless, so we don't need to check for them
+        assert(!cleaned.includes('<'), `Should strip all HTML from: "${dangerous}"`);
+        
+        // Ensure we still have the legitimate text content
+        assert(cleaned.length > 0, `Should retain some text content from: "${dangerous}"`);
+        
+        // Check that common script-related patterns in HTML context are gone
+        assert(!cleaned.includes('<script'), `Should strip script tags from: "${dangerous}"`);
+        assert(!cleaned.includes('<iframe'), `Should strip iframe tags from: "${dangerous}"`);
+        assert(!cleaned.includes('onclick='), `Should strip onclick handlers from: "${dangerous}"`);
+        assert(!cleaned.includes('onload='), `Should strip onload handlers from: "${dangerous}"`);
+        
+        // Additional checks for the challenging nested/malformed cases
+        // Note: We don't check for 'alert(' or 'javascript:' as text because once HTML tags are stripped,
+        // these become harmless text content. The security concern is only when they're in executable HTML contexts.
+    }
     
     // Special test for the challenging case that could bypass the old approach
     const challengingCase = '<scrip<strong>t>alert("bypass attempt")</script>';
@@ -439,12 +439,44 @@ function testHtmlInjectionPrevention() {
         cleanedChallenge = cleanedChallenge.replace(/<[^>]*>/g, '');
     } while (previousCleanedChallenge !== cleanedChallenge);
     
-         // This should be completely clean now - result should be 't>alert("bypass attempt")'
-     assert.strictEqual(cleanedChallenge, 't>alert("bypass attempt")', 'Complex nested case should be safely cleaned');
-     assert(!cleanedChallenge.includes('<'), 'No opening angle brackets should remain (they could start HTML tags)');
+    // This should be completely clean now - result should be 't>alert("bypass attempt")'
+    assert.strictEqual(cleanedChallenge, 't>alert("bypass attempt")', 'Complex nested case should be safely cleaned');
+    assert(!cleanedChallenge.includes('<'), 'No opening angle brackets should remain (they could start HTML tags)');
     
     console.log('  ✓ HTML injection prevention test passed - dangerous content was safely stripped');
     console.log('  ✓ Complex nested HTML bypass attempts were successfully prevented');
+}
+
+// Test retroactive calculations per Article 3(1)
+function testRetroactiveCalculations() {
+    // Test the user's specific example: 7 days back from June 25, 2025
+    // Expected: Skip June 25 (event day), start from June 24, count 7 days back
+    // Days: 24, 23, 22, 21, 20, 19, 18 -> should end on June 18 at 00:00
+    const userExample = calculatePeriod(new Date('2025-06-25T12:00:00Z'), -7, 'days');
+    assert.strictEqual(iso(userExample.finalEndDate), '2025-06-18T00:00:00.000Z', 
+        '7 days back from June 25 should end on June 18 at 00:00');
+    assert(userExample.appliedRules.some(r => r.includes('Article 3(1)')), 'Article 3(1) should be applied');
+    
+    // Test 1 day back: should skip event day and end on previous day at 00:00
+    const oneDayBack = calculatePeriod(new Date('2025-06-25T15:30:00Z'), -1, 'days');
+    assert.strictEqual(iso(oneDayBack.finalEndDate), '2025-06-24T00:00:00.000Z', 
+        '1 day back from June 25 should end on June 24 at 00:00');
+    
+    // Test 3 days back from Monday (should handle weekends correctly)
+    const threeDaysBack = calculatePeriod(new Date('2025-06-23T10:00:00Z'), -3, 'days'); // Monday
+    assert.strictEqual(iso(threeDaysBack.finalEndDate), '2025-06-20T00:00:00.000Z', 
+        '3 days back from Monday June 23 should end on Friday June 20 at 00:00');
+    
+    // Test retroactive hours calculation
+    const hoursBack = calculatePeriod(new Date('2025-06-25T14:30:00Z'), -5, 'hours');
+    // Should skip the event hour (14:00), start from 14:00, go back 5 hours to 09:00
+    assert.strictEqual(iso(hoursBack.finalEndDate), '2025-06-25T09:00:00.000Z', 
+        '5 hours back from 14:30 should end at 09:00');
+    
+    console.log('  ✓ 7 days back from June 25 ends on June 18 (user example)');
+    console.log('  ✓ 1 day back correctly skips event day');
+    console.log('  ✓ 3 days back handles weekends correctly');
+    console.log('  ✓ Retroactive hours calculation works correctly');
 }
 
 console.log('Running tests...');
@@ -465,7 +497,8 @@ const tests = [
     { name: 'Month-end edge cases (Article 3(2)(c))', fn: testMonthEndEdgeCases },
     { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation },
     { name: 'Holiday system sanitization (Security)', fn: testHolidaySystemSanitization },
-    { name: 'HTML injection prevention in warning messages', fn: testHtmlInjectionPrevention }
+    { name: 'HTML injection prevention in warning messages', fn: testHtmlInjectionPrevention },
+    { name: 'Retroactive calculations', fn: testRetroactiveCalculations }
 ];
 
 const failures = [];
