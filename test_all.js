@@ -363,11 +363,11 @@ function testHtmlInjectionPrevention() {
     // Simulate the sanitization logic from createResultElement
     let cleanWarning = dangerousInput;
     
-
+    // Simplified and more secure: just strip all HTML tags completely
+    // This prevents any edge cases with nested or malformed HTML
     let previousWarning;
-    do {previousWarning = cleanWarning;
-
-        cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+    do {
+        previousWarning = cleanWarning;
         cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
     } while (previousWarning !== cleanWarning);
     
@@ -391,17 +391,30 @@ function testHtmlInjectionPrevention() {
          '<style>body{background:url("javascript:alert(1)")}</style>Warning',
          '<div onclick="alert(1)">Click me</div>Important notice',
          'Data: <svg onload="alert(1)"></svg>',
-         'Test: <details open ontoggle="alert(1)">Content</details>'
+         'Test: <details open ontoggle="alert(1)">Content</details>',
+         // Test nested and malformed HTML that could bypass weaker sanitization
+         '<scrip<strong>t>alert(1)</script>',
+         '<strong><script>alert(1)</script></strong>',
+         '<script><strong>evil</strong>alert(1)</script>',
+         '<<script>alert(1)</script>>',
+         '<script><!--<strong>--></strong>alert(1)</script>',
+         '<strong><script></strong>alert(1)</script>',
+         '<scri<strong></strong>pt>alert(1)</script>'
      ];
      
      for (const dangerous of otherDangerousInputs) {
          let cleaned = dangerous;
-         cleaned = cleaned.replace(/<strong>([^<]*)<\/strong>/g, '$1');
-         cleaned = cleaned.replace(/<[^>]*>/g, '');
+         // Use the same simplified sanitization logic
+         let previousCleaned;
+         do {
+             previousCleaned = cleaned;
+             cleaned = cleaned.replace(/<[^>]*>/g, '');
+         } while (previousCleaned !== cleaned);
          
          // The main security goal: ensure no HTML tags remain that could be executed
+         // We check for '<' characters which could start HTML tags
+         // Note: '>' characters in plain text are harmless, so we don't need to check for them
          assert(!cleaned.includes('<'), `Should strip all HTML from: "${dangerous}"`);
-         assert(!cleaned.includes('>'), `Should strip all HTML from: "${dangerous}"`);
          
          // Ensure we still have the legitimate text content
          assert(cleaned.length > 0, `Should retain some text content from: "${dangerous}"`);
@@ -411,9 +424,27 @@ function testHtmlInjectionPrevention() {
          assert(!cleaned.includes('<iframe'), `Should strip iframe tags from: "${dangerous}"`);
          assert(!cleaned.includes('onclick='), `Should strip onclick handlers from: "${dangerous}"`);
          assert(!cleaned.includes('onload='), `Should strip onload handlers from: "${dangerous}"`);
+         
+         // Additional checks for the challenging nested/malformed cases
+         // Note: We don't check for 'alert(' or 'javascript:' as text because once HTML tags are stripped,
+         // these become harmless text content. The security concern is only when they're in executable HTML contexts.
      }
     
+    // Special test for the challenging case that could bypass the old approach
+    const challengingCase = '<scrip<strong>t>alert("bypass attempt")</script>';
+    let cleanedChallenge = challengingCase;
+    let previousCleanedChallenge;
+    do {
+        previousCleanedChallenge = cleanedChallenge;
+        cleanedChallenge = cleanedChallenge.replace(/<[^>]*>/g, '');
+    } while (previousCleanedChallenge !== cleanedChallenge);
+    
+         // This should be completely clean now - result should be 't>alert("bypass attempt")'
+     assert.strictEqual(cleanedChallenge, 't>alert("bypass attempt")', 'Complex nested case should be safely cleaned');
+     assert(!cleanedChallenge.includes('<'), 'No opening angle brackets should remain (they could start HTML tags)');
+    
     console.log('  ✓ HTML injection prevention test passed - dangerous content was safely stripped');
+    console.log('  ✓ Complex nested HTML bypass attempts were successfully prevented');
 }
 
 console.log('Running tests...');

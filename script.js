@@ -558,53 +558,52 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
 function renderCalendar(result) {
     const container = document.getElementById('calendar-container');
-    container.innerHTML = '';
+    container.replaceChildren(); // Clear previous content safely
 
-    // Create legend
+    // Create legend using safe DOM manipulation instead of innerHTML
     const legend = document.createElement('div');
     legend.className = 'calendar-legend';
-    legend.innerHTML = `
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: #1a73e8;"></div>
-            <span>Start of period</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: #1557b0;"></div>
-            <span>End of period</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: #f3e5f5; border: 1px dashed #9c27b0;"></div>
-            <span>Event Date</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background: linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%); border: 1px dashed #9c27b0;"></div>
-            <span>Start + Event Date</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: #e8f0fe;"></div>
-            <span>Working Day</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: #fff3cd;"></div>
-            <span>Holiday</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: #f8f9fa; border: 1px solid #dee2e6;"></div>
-            <span>Weekend</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="border: 1px solid #1a73e8;"></div>
-            <span>In Period</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="border: 1px dashed #1a73e8;"></div>
-            <span>Extension</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="border: 2px solid #dc3545;"></div>
-            <span>Today</span>
-        </div>
-    `;
+    
+    // Define legend items with their styles and labels
+    const legendItems = [
+        { color: '#1a73e8', label: 'Start of period' },
+        { color: '#1557b0', label: 'End of period' },
+        { color: '#f3e5f5', border: '1px dashed #9c27b0', label: 'Event Date' },
+        { background: 'linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%)', border: '1px dashed #9c27b0', label: 'Start + Event Date' },
+        { color: '#e8f0fe', label: 'Working Day' },
+        { color: '#fff3cd', label: 'Holiday' },
+        { color: '#f8f9fa', border: '1px solid #dee2e6', label: 'Weekend' },
+        { border: '1px solid #1a73e8', label: 'In Period' },
+        { border: '1px dashed #1a73e8', label: 'Extension' },
+        { border: '2px solid #dc3545', label: 'Today' }
+    ];
+    
+    // Create each legend item safely
+    legendItems.forEach(item => {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        
+        const legendColor = document.createElement('div');
+        legendColor.className = 'legend-color';
+        
+        // Apply styles safely
+        if (item.color) {
+            legendColor.style.backgroundColor = item.color;
+        }
+        if (item.background) {
+            legendColor.style.background = item.background;
+        }
+        if (item.border) {
+            legendColor.style.border = item.border;
+        }
+        
+        const legendLabel = document.createElement('span');
+        legendLabel.textContent = item.label;
+        
+        legendItem.appendChild(legendColor);
+        legendItem.appendChild(legendLabel);
+        legend.appendChild(legendItem);
+    });
     container.appendChild(legend);
 
     // Create months container
@@ -806,9 +805,8 @@ function createResultElement(result) {
         // This prevents any potential HTML injection vulnerabilities
         let cleanWarning = result.holidayDataWarning;
         let previousWarning;
-        do {previousWarning = cleanWarning;
-
-            cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
+        do {
+            previousWarning = cleanWarning;
             cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
         } while (previousWarning !== cleanWarning);
         
@@ -1526,10 +1524,10 @@ function handleSubmit(event) {
         eventDateTime.setHours(0, 0, 0, 0);
     }
     
-    const result = calculatePeriod(eventDateTime, periodValue, periodType);
-    const resultContainer = document.getElementById('result');
-    resultContainer.innerHTML = ''; // Clear previous content
-    resultContainer.appendChild(createResultElement(result));
+            const result = calculatePeriod(eventDateTime, periodValue, periodType);
+        const resultContainer = document.getElementById('result');
+        resultContainer.replaceChildren(); // Clear previous content safely
+        resultContainer.appendChild(createResultElement(result));
 }
 
 // Permalink functionality
@@ -1893,7 +1891,7 @@ if (typeof module !== 'undefined' && module.exports) {
         
         const result = calculatePeriod(eventDateTime, periodValue, periodType);
         const resultContainer = document.getElementById('result');
-        resultContainer.innerHTML = ''; // Clear previous content
+        resultContainer.replaceChildren(); // Clear previous content safely
         resultContainer.appendChild(createResultElement(result));
         
         // Update URL to reflect current calculation
