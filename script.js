@@ -947,6 +947,103 @@ function formatICalAllDayDate(date) {
     return `${year}${month}${day}`;
 }
 
+// Security function to sanitize text for iCal format
+function sanitizeICalText(text) {
+    if (!text) return '';
+    
+    return text
+        // Limit length to reasonable size (75 chars per RFC 5545 line folding, but we'll be more generous for titles)
+        .slice(0, 100)
+        // Remove line breaks and carriage returns (critical for preventing injection)
+        .replace(/[\r\n\u2028\u2029]/g, '')
+        // Remove other control characters except tab
+        .replace(/[\x00-\x08\x0B-\x1F\x7F]/g, '')
+        // Escape iCal special characters according to RFC 5545
+        .replace(/\\/g, '\\\\')  // Backslash must be escaped first
+        .replace(/;/g, '\\;')    // Semicolon
+        .replace(/,/g, '\\,')    // Comma
+        .replace(/"/g, '\\"')    // Quote (though not strictly required in all contexts)
+        // Trim whitespace
+        .trim();
+}
+
+// Security function to sanitize text for URL parameters
+function sanitizeUrlText(text) {
+    if (!text) return '';
+    
+    return text
+        // Limit length for URLs (browsers have limits, Google Calendar has specific limits)
+        .slice(0, 100)
+        // Remove line breaks and control characters
+        .replace(/[\r\n\u2028\u2029\x00-\x1F\x7F]/g, '')
+        // Trim whitespace
+        .trim();
+}
+
+// Client-side validation function for event names
+function validateEventName(text) {
+    if (!text) return { valid: true, sanitized: '' };
+    
+    // Check for obviously malicious patterns
+    const suspiciousPatterns = [
+        /BEGIN:/i,
+        /END:/i,
+        /VEVENT/i,
+        /VALARM/i,
+        /VTODO/i,
+        /VJOURNAL/i,
+        /javascript:/i,
+        /data:/i,
+        /vbscript:/i,
+        /&subject=/i,      // URL parameter injection
+        /&dates=/i,        // Calendar URL injection  
+        /<script/i,        // Script tag injection
+        /"><script/i,      // Attribute breakout + script
+        /\s*\[\s*\]/,      // Suspicious brackets
+        /\{\{.*\}\}/,      // Template injection patterns
+        /\$\{.*\}/,        // Template literal injection
+        /%[0-9a-f]{2}/i,   // URL encoded characters (suspicious in event names)
+        /\\x[0-9a-f]{2}/i, // Hex encoded characters
+        /\\u[0-9a-f]{4}/i  // Unicode escape sequences
+    ];
+    
+    for (const pattern of suspiciousPatterns) {
+        if (pattern.test(text)) {
+            return { 
+                valid: false, 
+                error: 'Event name contains invalid characters or patterns.',
+                sanitized: ''
+            };
+        }
+    }
+    
+    // Check for too many special characters (might indicate injection attempt)
+    const specialCharCount = (text.match(/[<>\"&;{}\\]/g) || []).length;
+    if (specialCharCount > 3) {
+        return {
+            valid: false,
+            error: 'Event name contains too many special characters.',
+            sanitized: text.replace(/[<>\"&;{}\\]/g, '').trim()
+        };
+    }
+    
+    // Length check
+    if (text.length > 100) {
+        return {
+            valid: false,
+            error: 'Event name is too long (maximum 100 characters).',
+            sanitized: text.slice(0, 100)
+        };
+    }
+    
+    // Basic sanitization for display
+    const sanitized = text
+        .replace(/[\r\n\u2028\u2029\x00-\x1F\x7F]/g, '')
+        .trim();
+    
+    return { valid: true, sanitized };
+}
+
 // Function to generate deadline export (all-day event with reminder)
 function generateDeadlineICalEvent(result, deadlineName, periodDescription) {
     const now = new Date();
@@ -961,13 +1058,17 @@ function generateDeadlineICalEvent(result, deadlineName, periodDescription) {
     endAllDay.setHours(0, 0, 0, 0);
     
     const eventId = `deadline-${now.getTime()}@eu-periods-calculator.com`;
-    const defaultTitle = deadlineName || `EU Regulation 1182/71 Deadline`;
     
+    // Sanitize user input for iCal format
+    const safeTitle = sanitizeICalText(deadlineName) || 'EU Regulation 1182/71 Deadline';
+    const safePeriodDescription = sanitizeICalText(periodDescription);
+    
+    // Build description with safe, static content
     const description = `Calculated deadline based on EU Regulation 1182/71\\n\\n` +
-                       `Period: ${periodDescription}\\n` +
-                       `Event Date: ${formatDate(result.eventDate)}\\n` +
-                       `Calculated End Date: ${formatDateTime(result.finalEndDate)}\\n\\n` +
-                       `Applied Rules:\\n${result.appliedRules.join('\\n')}\\n\\n` +
+                       `Period: ${safePeriodDescription}\\n` +
+                       `Event Date: ${sanitizeICalText(formatDate(result.eventDate))}\\n` +
+                       `Calculated End Date: ${sanitizeICalText(formatDateTime(result.finalEndDate))}\\n\\n` +
+                       `Applied Rules:\\n${result.appliedRules.map(rule => sanitizeICalText(rule)).join('\\n')}\\n\\n` +
                        `Generated by EU Periods Calculator`;
     
     const icalContent = `BEGIN:VCALENDAR
@@ -979,13 +1080,13 @@ BEGIN:VEVENT
 UID:${eventId}
 DTSTART;VALUE=DATE:${formatICalAllDayDate(startAllDay)}
 DTEND;VALUE=DATE:${formatICalAllDayDate(endAllDay)}
-SUMMARY:${defaultTitle}
+SUMMARY:${safeTitle}
 DESCRIPTION:${description}
 STATUS:CONFIRMED
 TRANSP:OPAQUE
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:Reminder: ${defaultTitle}
+DESCRIPTION:Reminder: ${safeTitle}
 TRIGGER:-P1D
 END:VALARM
 END:VEVENT
@@ -1009,13 +1110,18 @@ function generatePeriodICalEvent(result, deadlineName, periodDescription) {
     endAllDay.setHours(0, 0, 0, 0);
     
     const eventId = `period-${now.getTime()}@eu-periods-calculator.com`;
-    const title = `EU Period: ${deadlineName || 'Legal Deadline'}`;
     
+    // Sanitize user input for iCal format
+    const safeName = sanitizeICalText(deadlineName) || 'Legal Deadline';
+    const title = `EU Period: ${safeName}`;
+    const safePeriodDescription = sanitizeICalText(periodDescription);
+    
+    // Build description with safe, static content
     const description = `EU Regulation 1182/71 Period Calculation\\n\\n` +
-                       `Period: ${periodDescription}\\n` +
-                       `Start (Event Date): ${formatDate(result.eventDate)}\\n` +
-                       `End (Deadline): ${formatDateTime(result.finalEndDate)}\\n\\n` +
-                       `Applied Rules:\\n${result.appliedRules.join('\\n')}\\n\\n` +
+                       `Period: ${safePeriodDescription}\\n` +
+                       `Start (Event Date): ${sanitizeICalText(formatDate(result.eventDate))}\\n` +
+                       `End (Deadline): ${sanitizeICalText(formatDateTime(result.finalEndDate))}\\n\\n` +
+                       `Applied Rules:\\n${result.appliedRules.map(rule => sanitizeICalText(rule)).join('\\n')}\\n\\n` +
                        `This event spans the entire calculated period.\\n\\n` +
                        `Generated by EU Periods Calculator`;
     
@@ -1058,16 +1164,20 @@ function generateGoogleCalendarLink(result, deadlineName, periodDescription, isD
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Google expects end date to be exclusive
         
-        const title = encodeURIComponent(deadlineName || 'EU Regulation 1182/71 Deadline');
+        // Sanitize and encode for URL
+        const safeTitle = sanitizeUrlText(deadlineName) || 'EU Regulation 1182/71 Deadline';
+        const title = encodeURIComponent(safeTitle);
         const startDateStr = formatICalAllDayDate(deadlineDate);
         const endDateStr = formatICalAllDayDate(endDate);
         
+        // Build description with sanitized content
+        const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
             `Calculated deadline based on EU Regulation 1182/71\n\n` +
-            `Period: ${periodDescription}\n` +
+            `Period: ${safePeriodDescription}\n` +
             `Event Date: ${formatDate(result.eventDate)}\n` +
             `Calculated End Date: ${formatDateTime(result.finalEndDate)}\n\n` +
-            `Applied Rules: ${result.appliedRules.join(', ')}\n\n` +
+            `Applied Rules: ${result.appliedRules.map(rule => sanitizeUrlText(rule)).join(', ')}\n\n` +
             `Generated by EU Periods Calculator`
         );
         
@@ -1078,16 +1188,20 @@ function generateGoogleCalendarLink(result, deadlineName, periodDescription, isD
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Google expects end date to be exclusive
         
-        const title = encodeURIComponent(`EU Period: ${deadlineName || 'Legal Deadline'}`);
+        // Sanitize and encode for URL
+        const safeName = sanitizeUrlText(deadlineName) || 'Legal Deadline';
+        const title = encodeURIComponent(`EU Period: ${safeName}`);
         const startDateStr = formatICalAllDayDate(startDate);
         const endDateStr = formatICalAllDayDate(endDate);
         
+        // Build description with sanitized content
+        const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
             `EU Regulation 1182/71 Period Calculation\n\n` +
-            `Period: ${periodDescription}\n` +
+            `Period: ${safePeriodDescription}\n` +
             `Start (Event Date): ${formatDate(result.eventDate)}\n` +
             `End (Deadline): ${formatDateTime(result.finalEndDate)}\n\n` +
-            `Applied Rules: ${result.appliedRules.join(', ')}\n\n` +
+            `Applied Rules: ${result.appliedRules.map(rule => sanitizeUrlText(rule)).join(', ')}\n\n` +
             `This event spans the entire calculated period.\n\n` +
             `Generated by EU Periods Calculator`
         );
@@ -1104,16 +1218,20 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Outlook expects end date to be exclusive
         
-        const title = encodeURIComponent(deadlineName || 'EU Regulation 1182/71 Deadline');
+        // Sanitize and encode for URL
+        const safeTitle = sanitizeUrlText(deadlineName) || 'EU Regulation 1182/71 Deadline';
+        const title = encodeURIComponent(safeTitle);
         const startDateStr = formatICalAllDayDate(deadlineDate);
         const endDateStr = formatICalAllDayDate(endDate);
         
+        // Build description with sanitized content
+        const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
             `Calculated deadline based on EU Regulation 1182/71\n\n` +
-            `Period: ${periodDescription}\n` +
+            `Period: ${safePeriodDescription}\n` +
             `Event Date: ${formatDate(result.eventDate)}\n` +
             `Calculated End Date: ${formatDateTime(result.finalEndDate)}\n\n` +
-            `Applied Rules: ${result.appliedRules.join(', ')}\n\n` +
+            `Applied Rules: ${result.appliedRules.map(rule => sanitizeUrlText(rule)).join(', ')}\n\n` +
             `Generated by EU Periods Calculator`
         );
         
@@ -1124,16 +1242,20 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Outlook expects end date to be exclusive
         
-        const title = encodeURIComponent(`EU Period: ${deadlineName || 'Legal Deadline'}`);
+        // Sanitize and encode for URL
+        const safeName = sanitizeUrlText(deadlineName) || 'Legal Deadline';
+        const title = encodeURIComponent(`EU Period: ${safeName}`);
         const startDateStr = formatICalAllDayDate(startDate);
         const endDateStr = formatICalAllDayDate(endDate);
         
+        // Build description with sanitized content
+        const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
             `EU Regulation 1182/71 Period Calculation\n\n` +
-            `Period: ${periodDescription}\n` +
+            `Period: ${safePeriodDescription}\n` +
             `Start (Event Date): ${formatDate(result.eventDate)}\n` +
             `End (Deadline): ${formatDateTime(result.finalEndDate)}\n\n` +
-            `Applied Rules: ${result.appliedRules.join(', ')}\n\n` +
+            `Applied Rules: ${result.appliedRules.map(rule => sanitizeUrlText(rule)).join(', ')}\n\n` +
             `This event spans the entire calculated period.\n\n` +
             `Generated by EU Periods Calculator`
         );
@@ -1168,39 +1290,95 @@ function closeCalendarModal() {
 function handleModalExport(exportType, format) {
     if (!window.currentCalculationResult) return;
     
-    const deadlineName = document.getElementById('modalDeadlineName').value || '';
+    const deadlineNameInput = document.getElementById('modalDeadlineName');
+    const deadlineName = deadlineNameInput.value || '';
+    
+    // Validate event name client-side
+    const validation = validateEventName(deadlineName);
+    if (!validation.valid) {
+        // Show error message
+        showValidationError(deadlineNameInput, validation.error);
+        return;
+    }
+    
+    // Clear any existing validation errors
+    clearValidationError(deadlineNameInput);
+    
     const periodValue = document.getElementById('periodValue').value;
     const periodType = document.getElementById('periodType').value;
     const periodDescription = `${periodValue} ${periodType}`;
     
+    // Use the validated/sanitized name
+    const safeDeadlineName = validation.sanitized;
+    
     if (exportType === 'deadline') {
         if (format === 'ical') {
-            const icalContent = generateDeadlineICalEvent(window.currentCalculationResult, deadlineName, periodDescription);
+            const icalContent = generateDeadlineICalEvent(window.currentCalculationResult, safeDeadlineName, periodDescription);
             const filename = `eu-deadline-${new Date().toISOString().split('T')[0]}.ics`;
             downloadICalFile(icalContent, filename);
         } else if (format === 'google') {
-            const googleLink = generateGoogleCalendarLink(window.currentCalculationResult, deadlineName, periodDescription, true);
+            const googleLink = generateGoogleCalendarLink(window.currentCalculationResult, safeDeadlineName, periodDescription, true);
             window.open(googleLink, '_blank');
         } else if (format === 'outlook') {
-            const outlookLink = generateOutlookWebLink(window.currentCalculationResult, deadlineName, periodDescription, true);
+            const outlookLink = generateOutlookWebLink(window.currentCalculationResult, safeDeadlineName, periodDescription, true);
             window.open(outlookLink, '_blank');
         }
     } else if (exportType === 'period') {
         if (format === 'ical') {
-            const icalContent = generatePeriodICalEvent(window.currentCalculationResult, deadlineName, periodDescription);
+            const icalContent = generatePeriodICalEvent(window.currentCalculationResult, safeDeadlineName, periodDescription);
             const filename = `eu-period-${new Date().toISOString().split('T')[0]}.ics`;
             downloadICalFile(icalContent, filename);
         } else if (format === 'google') {
-            const googleLink = generateGoogleCalendarLink(window.currentCalculationResult, deadlineName, periodDescription, false);
+            const googleLink = generateGoogleCalendarLink(window.currentCalculationResult, safeDeadlineName, periodDescription, false);
             window.open(googleLink, '_blank');
         } else if (format === 'outlook') {
-            const outlookLink = generateOutlookWebLink(window.currentCalculationResult, deadlineName, periodDescription, false);
+            const outlookLink = generateOutlookWebLink(window.currentCalculationResult, safeDeadlineName, periodDescription, false);
             window.open(outlookLink, '_blank');
         }
     }
     
     // Close modal after export
     closeCalendarModal();
+}
+
+// Function to show validation error
+function showValidationError(inputElement, errorMessage) {
+    // Remove any existing error
+    clearValidationError(inputElement);
+    
+    // Add error styling
+    inputElement.style.borderColor = '#dc3545';
+    inputElement.style.backgroundColor = '#fff5f5';
+    
+    // Create error message element
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'validation-error';
+    errorDiv.style.cssText = `
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 4px;
+        padding: 2px 0;
+    `;
+    errorDiv.textContent = errorMessage;
+    
+    // Insert error message after the input
+    inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
+    
+    // Focus the input
+    inputElement.focus();
+}
+
+// Function to clear validation error
+function clearValidationError(inputElement) {
+    // Reset input styling
+    inputElement.style.borderColor = '';
+    inputElement.style.backgroundColor = '';
+    
+    // Remove error message
+    const errorDiv = inputElement.parentNode.querySelector('.validation-error');
+    if (errorDiv) {
+        errorDiv.remove();
+    }
 }
 
 // Browser-only code
@@ -1525,6 +1703,35 @@ if (typeof module !== 'undefined' && module.exports) {
                 selectedHolidaySystem = this.value;
                 setCookie('holidaySystem', selectedHolidaySystem, 365);
                 updateCalculation();
+            });
+        }
+        
+        // Add real-time validation for modal event name input
+        const modalEventNameInput = document.getElementById('modalDeadlineName');
+        if (modalEventNameInput) {
+            modalEventNameInput.addEventListener('input', function() {
+                const validation = validateEventName(this.value);
+                if (!validation.valid && this.value.length > 0) {
+                    // Show validation error for non-empty invalid input
+                    showValidationError(this, validation.error);
+                } else {
+                    // Clear any existing errors
+                    clearValidationError(this);
+                }
+            });
+            
+            modalEventNameInput.addEventListener('paste', function(e) {
+                // Validate pasted content after a short delay
+                setTimeout(() => {
+                    const validation = validateEventName(this.value);
+                    if (!validation.valid && this.value.length > 0) {
+                        showValidationError(this, validation.error);
+                        // Replace content with sanitized version
+                        this.value = validation.sanitized;
+                    } else {
+                        clearValidationError(this);
+                    }
+                }, 10);
             });
         }
         

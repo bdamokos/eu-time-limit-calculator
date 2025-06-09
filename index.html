@@ -294,8 +294,14 @@
             <div class="modal-body">
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label for="modalDeadlineName">Event Name (optional):</label>
-                    <input type="text" id="modalDeadlineName" placeholder="e.g., Response deadline for Case XYZ" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    <small style="color: #666; display: block; margin-top: 4px;">This will appear as the event title in your calendar</small>
+                    <input type="text" 
+                           id="modalDeadlineName" 
+                           placeholder="e.g., Response deadline for Case XYZ" 
+                           maxlength="100"
+                           autocomplete="off"
+                           spellcheck="true"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666; display: block; margin-top: 4px;">This will appear as the event title in your calendar (max 100 characters)</small>
                 </div>
 
                 <div style="margin-bottom: 20px;">
