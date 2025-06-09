@@ -363,11 +363,6 @@ function testHtmlInjectionPrevention() {
     // Simulate the sanitization logic from createResultElement
     let cleanWarning = dangerousInput;
     
-    // First, extract content from any <strong> tags safely
-    cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
-    
-    // Then strip ALL HTML tags to ensure no script or other dangerous content
-    cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
 
     let previousWarning;
     do {previousWarning = cleanWarning;

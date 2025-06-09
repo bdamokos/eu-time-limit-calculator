@@ -805,13 +805,6 @@ function createResultElement(result) {
         // Safely extract and display the warning message by completely stripping all HTML
         // This prevents any potential HTML injection vulnerabilities
         let cleanWarning = result.holidayDataWarning;
-        
-        // First, extract content from any <strong> tags safely
-        cleanWarning = cleanWarning.replace(/<strong>([^<]*)<\/strong>/g, '$1');
-        
-        // Then strip ALL HTML tags to ensure no script or other dangerous content
-        cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
-
         let previousWarning;
         do {previousWarning = cleanWarning;
 
