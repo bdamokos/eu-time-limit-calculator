@@ -17,6 +17,7 @@ Try it out: [EU Date Calculator on GitHub Pages](https://bdamokos.github.io/eu-t
 - Visual calendar display showing period calculation with holidays highlighted
 - Multiple date format options
 - Retroactive period calculation support
+- Not (yet) implemented: partial months
 
 ## Holiday Data Sources
 
