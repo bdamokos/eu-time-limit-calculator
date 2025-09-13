@@ -82,12 +82,13 @@ const strings = {
     footer: {
         disclaimer: "⚠️ Disclaimer:",
         disclaimerText: "This website is for educational purposes only and is not legal advice on the interpretation or applicability of EU law. The calculations provided are based on the text of Regulation (EEC, Euratom) No 1182/71 and should not be relied upon for legal purposes.",
-        regulationDescription: "This calculator implements {regulationLink}, which determines the rules applicable to periods, dates and time limits in EU law.",
-        regulationTitle: "Regulation (EEC, Euratom) No 1182/71 of the Council of 3 June 1971 determining the rules applicable to periods, dates and time limits.",
+        regulationDescription: "This calculator implements {regulationLink}, which determines the rules applicable to periods, dates and time limits in EU law.", 
+        regulationTitle: "Regulation (EEC, Euratom) No 1182/71 of the Council of 3 June 1971 determining the rules applicable to periods, dates and time limits",
         holidayDataSources: "Holiday Data Sources:",
-        memberStatesSource: "EU Member States public holidays 2025: {sourceLink} (BG, ES, CS, DA, DE, ET, EL, EN, FR, GA, HR, IT, LV, LT, HU, MT, NL, PL, PT, RO, SK, SL, FI, SV)",
+        memberStatesSource: "EU Member States public holidays 2025: {sourceLink}",
         epSource: "European Parliament holidays 2025: {sourceLink}",
-        ecSource: "European Commission holidays 2025: {sourceLink} (BG, ES, CS, DA, DE, ET, EL, EN, FR, GA, HR, IT, LV, LT, HU, MT, NL, PL, PT, RO, SK, SL, FI, SV)",
+        ecSource: "European Commission holidays 2025: {sourceLink}",
+        ec2026Source: "European Commission holidays 2026: {sourceLink}",
         githubLink: "View source code on GitHub"
     },
 

@@ -118,7 +118,7 @@ const holidayData = {
         '2025-05-29', // Ascension Day
         '2025-05-30', // Day after Ascension Day
         '2025-06-09', // Whit Monday
-        '2025-06-23', // Luxembourg National Holiday (for staff serving in Luxembourg)
+        // '2025-06-23', // Luxembourg National Holiday (for staff serving in Luxembourg)
         '2025-07-21', // Belgian National Holiday (for staff serving in Brussels)
         '2025-08-15', // Assumption
         '2025-12-24', // Christmas period
@@ -128,7 +128,28 @@ const holidayData = {
         '2025-12-28',
         '2025-12-29',
         '2025-12-30',
-        '2025-12-31'
+        '2025-12-31',
+        // European Commission holidays 2026
+        '2026-01-01', // New Year's Day
+        '2026-01-02', // Day after New Year's Day
+        '2026-04-02', // Maundy Thursday
+        '2026-04-03', // Good Friday
+        '2026-04-06', // Easter Monday
+        '2026-05-01', // Labour Day
+        '2026-05-14', // Ascension Day
+        '2026-05-15', // Day after Ascension Day
+        '2026-05-25', // Whit Monday
+        // '2026-06-23', // Luxembourg National Holiday (for staff serving in Luxembourg)
+        '2026-07-21', // Belgian National Holiday (for staff serving in Brussels)
+        '2026-11-02', // All Souls’ Day
+        '2026-12-24', // Christmas period
+        '2026-12-25',
+        '2026-12-26',
+        '2026-12-27',
+        '2026-12-28',
+        '2026-12-29',
+        '2026-12-30',
+        '2026-12-31',
     ]
 };
 
@@ -1945,14 +1966,15 @@ if (typeof module !== 'undefined' && module.exports) {
             
             // Regulation description
             const regulationP = document.createElement('p');
-            const regulationLink = '<a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank" rel="noopener">EU Regulation 1182/71</a>';
+            
+            const regulationLink = '<a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank" rel="noopener">' + appStrings.footer.regulationTitle + '</a>';
             regulationP.innerHTML = interpolateString(appStrings.footer.regulationDescription, { regulationLink });
             footer.appendChild(regulationP);
             
             // Regulation title
             const regulationTitle = document.createElement('p');
             regulationTitle.textContent = appStrings.footer.regulationTitle;
-            footer.appendChild(regulationTitle);
+            // footer.appendChild(regulationTitle);
             
             // Holiday data sources
             const sourcesTitle = document.createElement('p');
@@ -1979,6 +2001,12 @@ if (typeof module !== 'undefined' && module.exports) {
             const ecLink = '<a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219" target="_blank" rel="noopener">OJ C, C/2024/2219, 22.3.2024, ELI: http://data.europa.eu/eli/C/2024/2219/oj</a>';
             ecLi.innerHTML = interpolateString(appStrings.footer.ecSource, { sourceLink: ecLink });
             sourcesList.appendChild(ecLi);
+
+            // EC 2026 source
+            const ec2026Li = document.createElement('li');
+            const ec2026Link = '<a href="https://eur-lex.europa.eu/eli/C/2025/4103/oj" target="_blank" rel="noopener">OJ C, C/2025/4103, 24.7.2025, ELI: http://data.europa.eu/eli/C/2025/4103/oj</a>';
+            ec2026Li.innerHTML = interpolateString(appStrings.footer.ec2026Source, { sourceLink: ec2026Link });
+            sourcesList.appendChild(ec2026Li);
             
             footer.appendChild(sourcesList);
             

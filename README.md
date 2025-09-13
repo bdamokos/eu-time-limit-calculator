@@ -27,6 +27,9 @@ The calculator uses official 2025 public holiday data from:
 - **European Parliament**: [Official Notice (Luxembourg, 25 July 2024)](https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2025_en.pdf)
 - **European Commission**: [OJ C, C/2024/2219, 22.3.2024](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219)
 
+2026 public holiday data from:
+- **European Commission**: [OJ C, C/2025/4103, 24.7.2025](https://eur-lex.europa.eu/eli/C/2025/4103/oj) 
+
 ## Usage
 
 1. Select an event date and time
