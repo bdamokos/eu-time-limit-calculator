@@ -899,41 +899,42 @@ if (!result2025.holidayDataWarning) {
 
 // Test 3: European Parliament data coverage test
 periods.setHolidaySystem('EP');
-const eventDate2027 = new Date('2026-12-01T10:00:00');
-const resultEP2027 = periods.calculatePeriod(eventDate2027, 60, 'days');
+const coverageTestYear = 2027;
+const eventDateCoverage = new Date(`${coverageTestYear - 1}-12-01T10:00:00`);
+const resultEPCoverage = periods.calculatePeriod(eventDateCoverage, 60, 'days');
 
-console.log('\nTest: 60 days from 2026-12-01 with European Parliament holidays');
+console.log(`\nTest: 60 days from ${coverageTestYear - 1}-12-01 with European Parliament holidays`);
 console.log(`Holiday system: European Parliament (${periods.getHolidaySystem()})`);
-console.log(`Period: ${resultEP2027.startDate.toISOString().split('T')[0]} to ${resultEP2027.finalEndDate.toISOString().split('T')[0]}`);
+console.log(`Period: ${resultEPCoverage.startDate.toISOString().split('T')[0]} to ${resultEPCoverage.finalEndDate.toISOString().split('T')[0]}`);
 
-// Check if EP has full 2027 data or just New Year period
-const ep2027Holidays = periods.holidayData['EP'].filter(d => d.startsWith('2027-'));
-const hasFullEP2027Data = ep2027Holidays.some(dateStr => {
+// Check if EP has full data for the test year or just New Year period
+const epHolidaysForYear = periods.holidayData['EP'].filter(d => d.startsWith(`${coverageTestYear}-`));
+const hasFullDataForYear = epHolidaysForYear.some(dateStr => {
     const date = dateStr.split('-');
     return date[1] !== '01' || parseInt(date[2]) > 7; // Has holidays beyond first week of January
 });
 
-if (hasFullEP2027Data) {
-    if (!resultEP2027.holidayDataWarning) {
-        console.log('✅ No warning needed - EP has full 2027 data available');
+if (hasFullDataForYear) {
+    if (!resultEPCoverage.holidayDataWarning) {
+        console.log(`✅ No warning needed - EP has full ${coverageTestYear} data available`);
     } else {
-        console.log('❌ Unexpected warning when EP has full 2027 data');
-        console.log(`Warning: ${resultEP2027.holidayDataWarning}`);
+        console.log(`❌ Unexpected warning when EP has full ${coverageTestYear} data`);
+        console.log(`Warning: ${resultEPCoverage.holidayDataWarning}`);
     }
 } else {
-    if (resultEP2027.holidayDataWarning) {
-        console.log('✅ European Parliament correctly shows warning for incomplete 2027 data');
-        console.log(`Warning: ${resultEP2027.holidayDataWarning}`);
+    if (resultEPCoverage.holidayDataWarning) {
+        console.log(`✅ European Parliament correctly shows warning for incomplete ${coverageTestYear} data`);
+        console.log(`Warning: ${resultEPCoverage.holidayDataWarning}`);
     } else {
-        console.log('❌ Expected warning for EP incomplete 2027 data (only New Year period available)');
+        console.log(`❌ Expected warning for EP incomplete ${coverageTestYear} data (only New Year period available)`);
     }
 }
 
 // Test 4: EP period within New Year week should not show warning
-const eventDateNewYear = new Date('2026-12-30T10:00:00');
+const eventDateNewYear = new Date(`${coverageTestYear - 1}-12-30T10:00:00`);
 const resultEPNewYear = periods.calculatePeriod(eventDateNewYear, 3, 'days');
 
-console.log('\nTest: 3 days from 2026-12-30 with European Parliament holidays (ends Jan 6, within New Year week)');
+console.log(`\nTest: 3 days from ${coverageTestYear - 1}-12-30 with European Parliament holidays (ends Jan 6, within New Year week)`);
 console.log(`Period: ${resultEPNewYear.startDate.toISOString().split('T')[0]} to ${resultEPNewYear.finalEndDate.toISOString().split('T')[0]}`);
 
 if (!resultEPNewYear.holidayDataWarning) {
@@ -944,10 +945,10 @@ if (!resultEPNewYear.holidayDataWarning) {
 }
 
 // Test 5: EP period only within New Year week should not show warning  
-const eventDateNewYearShort = new Date('2027-01-01T10:00:00');
+const eventDateNewYearShort = new Date(`${coverageTestYear}-01-01T10:00:00`);
 const resultEPNewYearShort = periods.calculatePeriod(eventDateNewYearShort, 1, 'days');
 
-console.log('\nTest: 1 day from 2027-01-01 with European Parliament holidays (within New Year coverage)');
+console.log(`\nTest: 1 day from ${coverageTestYear}-01-01 with European Parliament holidays (within New Year coverage)`);
 console.log(`Period: ${resultEPNewYearShort.startDate.toISOString().split('T')[0]} to ${resultEPNewYearShort.finalEndDate.toISOString().split('T')[0]}`);
 
 if (!resultEPNewYearShort.holidayDataWarning) {
@@ -958,17 +959,17 @@ if (!resultEPNewYearShort.holidayDataWarning) {
 }
 
 // Test 6: EP period extending beyond January 7 (dynamic based on data availability)
-const eventDateBeyondNewYear = new Date('2027-01-01T10:00:00');
+const eventDateBeyondNewYear = new Date(`${coverageTestYear}-01-01T10:00:00`);
 const resultEPBeyondNewYear = periods.calculatePeriod(eventDateBeyondNewYear, 10, 'days');
 
-console.log('\nTest: 10 days from 2027-01-01 with European Parliament holidays (extends beyond Jan 7)');
+console.log(`\nTest: 10 days from ${coverageTestYear}-01-01 with European Parliament holidays (extends beyond Jan 7)`);
 console.log(`Period: ${resultEPBeyondNewYear.startDate.toISOString().split('T')[0]} to ${resultEPBeyondNewYear.finalEndDate.toISOString().split('T')[0]}`);
 
-if (hasFullEP2027Data) {
+if (hasFullDataForYear) {
     if (!resultEPBeyondNewYear.holidayDataWarning) {
-        console.log('✅ No warning needed - EP has full 2027 data available');
+        console.log(`✅ No warning needed - EP has full ${coverageTestYear} data available`);
     } else {
-        console.log('❌ Unexpected warning when EP has full 2027 data');
+        console.log(`❌ Unexpected warning when EP has full ${coverageTestYear} data`);
         console.log(`Warning: ${resultEPBeyondNewYear.holidayDataWarning}`);
     }
 } else {
