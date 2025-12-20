@@ -2022,8 +2022,18 @@ if (typeof module !== 'undefined' && module.exports) {
             sourcesList.appendChild(epLi);
 
             const ep2026Li = document.createElement('li');
-            const ep2026Link = '<a href="https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2026_en.pdf" target="_blank" rel="noopener">European Parliament Official Notice: Public holidays and office closing days during 2026, Luxembourg, 10 October 2025 (accessed 20.12.2025)</a>';
-            ep2026Li.innerHTML = interpolateString(appStrings.footer.ep2026Source, { sourceLink: ep2026Link });
+            const ep2026LinkEl = document.createElement('a');
+            ep2026LinkEl.href = "https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2026_en.pdf";
+            ep2026LinkEl.target = "_blank";
+            ep2026LinkEl.rel = "noopener";
+            ep2026LinkEl.textContent = "European Parliament Official Notice: Public holidays and office closing days during 2026, Luxembourg, 10 October 2025 (accessed 20.12.2025)";
+            
+            const textParts = appStrings.footer.ep2026Source.split('{sourceLink}');
+            ep2026Li.append(textParts[0]);
+            ep2026Li.append(ep2026LinkEl);
+            if (textParts[1]) {
+                ep2026Li.append(textParts[1]);
+            }
             sourcesList.appendChild(ep2026Li);
             
             // EC source
