@@ -103,7 +103,32 @@ const holidayData = {
         '2025-12-30',
         '2025-12-31',
         '2026-01-01',
-        '2026-01-02'
+        '2026-01-02',
+
+        // Public holidays 2026
+        '2026-04-02', // Maundy Thursday
+        '2026-04-03', // Good Friday
+        '2026-04-06', // Easter Monday
+        '2026-05-01', // Labour Day
+        '2026-05-14', // Ascension Day
+        '2026-05-15', // Day following Ascension Day
+        '2026-05-25', // Whit Monday
+        // National Days (Note: these depend on place of employment)
+        // '2026-06-23', // National Day in Luxembourg
+        // '2026-07-14', // National Day in France
+        '2026-07-21', // National Day in Belgium
+        '2026-11-02', // All Souls' Day
+
+        // Office closing days 2026
+        '2026-12-24',
+        '2026-12-25',
+        '2026-12-26',
+        '2026-12-27',
+        '2026-12-28',
+        '2026-12-29',
+        '2026-12-30',
+        '2026-12-31',
+        '2027-01-01'
     ],
 
     // European Commission holidays 2025
@@ -1995,6 +2020,11 @@ if (typeof module !== 'undefined' && module.exports) {
             const epLink = '<a href="https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2025_en.pdf" target="_blank" rel="noopener">European Parliament Official Notice: Public holidays and office closing days during 2025, Luxembourg, 25 July 2024 (accessed 06.06.2025)</a>';
             epLi.innerHTML = interpolateString(appStrings.footer.epSource, { sourceLink: epLink });
             sourcesList.appendChild(epLi);
+
+            const ep2026Li = document.createElement('li');
+            const ep2026Link = '<a href="https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2026_en.pdf" target="_blank" rel="noopener">European Parliament Official Notice: Public holidays and office closing days during 2026, Luxembourg, 10 October 2025 (accessed 20.12.2025)</a>';
+            ep2026Li.innerHTML = interpolateString(appStrings.footer.ep2026Source, { sourceLink: ep2026Link });
+            sourcesList.appendChild(ep2026Li);
             
             // EC source
             const ecLi = document.createElement('li');

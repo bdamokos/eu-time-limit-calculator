@@ -87,6 +87,7 @@ const strings = {
         holidayDataSources: "Holiday Data Sources:",
         memberStatesSource: "EU Member States public holidays 2025: {sourceLink}",
         epSource: "European Parliament holidays 2025: {sourceLink}",
+        ep2026Source: "European Parliament holidays 2026: {sourceLink}",
         ecSource: "European Commission holidays 2025: {sourceLink}",
         ec2026Source: "European Commission holidays 2026: {sourceLink}",
         githubLink: "View source code on GitHub"
