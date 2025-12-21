@@ -669,9 +669,11 @@ function testStringSecurityContent() {
     const footerLinks = [
         appStrings.footer.regulationDescription,
         appStrings.footer.memberStatesSource,
+        appStrings.footer.memberStates2026Source,
         appStrings.footer.epSource,
         appStrings.footer.ep2026Source,
-        appStrings.footer.ecSource
+        appStrings.footer.ecSource,
+        appStrings.footer.ec2026Source
     ];
     
     for (const text of footerLinks) {
@@ -684,6 +686,7 @@ function testStringSecurityContent() {
                 const allowedDomains = [
                     'https://eur-lex.europa.eu',
                     'https://www.europarl.europa.eu',
+                    'https://www.ema.europa.eu',
                     'https://github.com'
                 ];
                 
