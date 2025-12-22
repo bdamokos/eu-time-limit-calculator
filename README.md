@@ -11,7 +11,7 @@ Try it out: [EU Date Calculator on GitHub Pages](https://bdamokos.github.io/eu-t
 - Calculate end dates based on periods (hours, days, weeks, months, years)
 - Support for working days calculation (excluding weekends and holidays)
 - **Holiday System Selection**: Choose from EU Member State public holidays or EU institution calendars
-  - All 27 EU Member States with official 2025 public holidays
+  - All 27 EU Member States with official 2025 and 2026 public holidays
   - European Parliament holiday calendar
   - European Commission holiday calendar
 - Visual calendar display showing period calculation with holidays highlighted
@@ -28,6 +28,7 @@ The calculator uses official 2025 public holiday data from:
 - **European Commission**: [OJ C, C/2024/2219, 22.3.2024](https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219)
 
 2026 public holiday data from:
+- **EU Member States**: [Public holidays 2026, PUB/2025/1503, OJ C, C/2025/6771, 22.12.2025, ELI: http://data.europa.eu/eli/C/2025/6771/oj (BG, ES, CS, DA, DE, ET, EL, EN, FR, GA, HR, IT, LV, LT, HU, MT, NL, PL, PT, RO, SK, SL, FI, SV)](http://data.europa.eu/eli/C/2025/6771/oj)
 - **European Parliament**: [Official Notice (Luxembourg, 10 October 2025)](https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2026_en.pdf)
 - **European Commission**: [OJ C, C/2025/4103, 24.7.2025](https://eur-lex.europa.eu/eli/C/2025/4103/oj) 
 
