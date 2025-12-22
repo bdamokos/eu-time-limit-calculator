@@ -86,6 +86,7 @@ const strings = {
         regulationTitle: "Regulation (EEC, Euratom) No 1182/71 of the Council of 3 June 1971 determining the rules applicable to periods, dates and time limits",
         holidayDataSources: "Holiday Data Sources:",
         memberStatesSource: "EU Member States public holidays 2025: {sourceLink}",
+        memberStates2026Source: "EU Member States public holidays 2026: {sourceLink}",
         epSource: "European Parliament holidays 2025: {sourceLink}",
         ep2026Source: "European Parliament holidays 2026: {sourceLink}",
         ecSource: "European Commission holidays 2025: {sourceLink}",

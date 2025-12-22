@@ -12,41 +12,176 @@ if (typeof module !== 'undefined' && module.exports) {
     appStrings = require('./strings.js');
 } else if (typeof window !== 'undefined') {
     // Browser environment - will load after script.js loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         appStrings = window.strings;
     });
 }
 
 // Holiday data organized by country/institution
 const holidayData = {
-    // EU Member States holidays for 2025 based on OJ C, C/2024/7517, 20.12.2024
-    'BE': ['2025-01-01', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-08', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25'],
-    'BG': ['2025-01-01', '2025-03-03', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-06', '2025-05-24', '2025-09-06', '2025-09-22', '2025-11-01', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'CZ': ['2025-01-01', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-07-06', '2025-09-28', '2025-10-28', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'DK': ['2025-01-01', '2025-04-17', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-29', '2025-06-08', '2025-06-09', '2025-12-25', '2025-12-26'],
-    'DE': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-10-03', '2025-12-25', '2025-12-26'],
-    'EE': ['2025-01-01', '2025-02-24', '2025-04-18', '2025-04-20', '2025-05-01', '2025-06-08', '2025-06-23', '2025-06-24', '2025-08-20', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'IE': ['2025-01-01', '2025-02-03', '2025-03-17', '2025-04-21', '2025-05-05', '2025-06-02', '2025-08-04', '2025-10-27', '2025-12-25', '2025-12-26'],
-    'EL': ['2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-10-28', '2025-12-25', '2025-12-26'],
-    'ES': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-05-01', '2025-08-15', '2025-11-01', '2025-12-06', '2025-12-08', '2025-12-25'],
-    'FR': ['2025-01-01', '2025-04-21', '2025-05-01', '2025-05-08', '2025-05-29', '2025-06-09', '2025-07-14', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25'],
-    'HR': ['2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-30', '2025-06-19', '2025-06-22', '2025-08-05', '2025-08-15', '2025-11-01', '2025-11-18', '2025-12-25', '2025-12-26'],
-    'IT': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26'],
-    'CY': ['2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-15', '2025-10-01', '2025-10-28', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'LV': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-05', '2025-06-23', '2025-06-24', '2025-11-18', '2025-12-24', '2025-12-25', '2025-12-26', '2025-12-31'],
-    'LT': ['2025-01-01', '2025-02-16', '2025-03-11', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-04', '2025-06-01', '2025-06-24', '2025-07-06', '2025-08-15', '2025-11-01', '2025-11-02', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'LU': ['2025-01-01', '2025-04-21', '2025-05-01', '2025-05-09', '2025-05-29', '2025-06-09', '2025-06-23', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26'],
-    'HU': ['2025-01-01', '2025-03-15', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-20', '2025-10-23', '2025-11-01', '2025-12-25', '2025-12-26'],
-    'MT': ['2025-01-01', '2025-02-10', '2025-03-19', '2025-03-31', '2025-04-18', '2025-05-01', '2025-06-07', '2025-06-29', '2025-08-15', '2025-09-08', '2025-09-21', '2025-12-08', '2025-12-13', '2025-12-25'],
-    'NL': ['2025-01-01', '2025-04-18', '2025-04-21', '2025-04-26', '2025-05-05', '2025-05-29', '2025-05-30', '2025-06-09', '2025-12-25', '2025-12-26'],
-    'AT': ['2025-01-01', '2025-01-06', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-06-19', '2025-08-15', '2025-10-26', '2025-11-01', '2025-12-08', '2025-12-25', '2025-12-26'],
-    'PL': ['2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-03', '2025-06-08', '2025-06-19', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25', '2025-12-26'],
-    'PT': ['2025-01-01', '2025-04-18', '2025-04-20', '2025-04-25', '2025-05-01', '2025-06-10', '2025-06-19', '2025-08-15', '2025-10-05', '2025-11-01', '2025-12-01', '2025-12-08', '2025-12-25'],
-    'RO': ['2025-01-01', '2025-01-02', '2025-01-06', '2025-01-07', '2025-01-24', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-11-30', '2025-12-01', '2025-12-25', '2025-12-26'],
-    'SI': ['2025-01-01', '2025-01-02', '2025-02-08', '2025-04-20', '2025-04-21', '2025-04-27', '2025-05-01', '2025-05-02', '2025-06-08', '2025-06-25', '2025-08-15', '2025-10-31', '2025-11-01', '2025-12-25', '2025-12-26'],
-    'SK': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-08-29', '2025-09-15', '2025-11-01', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'FI': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-20', '2025-12-06', '2025-12-24', '2025-12-25', '2025-12-26'],
-    'SE': ['2025-01-01', '2025-01-06', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-06', '2025-06-08', '2025-06-21', '2025-11-01', '2025-12-25', '2025-12-26'],
+    // EU Member States holidays for 2025-2026 based on OJ C, C/2024/7517, 20.12.2024 and OJ C, C/2025/6771, 22.12.2025
+    'BE': [
+        // 2025
+        '2025-01-01', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-08', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25',
+        // 2026
+        '2026-01-01', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-07-21', '2026-11-02', '2026-11-11', '2026-12-25'
+    ],
+    'BG': [
+        // 2025
+        '2025-01-01', '2025-03-03', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-06', '2025-05-24', '2025-09-06', '2025-09-22', '2025-11-01', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-03-03', '2026-04-10', '2026-04-11', '2026-04-12', '2026-04-13', '2026-05-01', '2026-05-06', '2026-05-24', '2026-09-06', '2026-09-22', '2026-11-01', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'CZ': [
+        // 2025
+        '2025-01-01', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-07-06', '2025-09-28', '2025-10-28', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-08', '2026-07-05', '2026-07-06', '2026-09-28', '2026-10-28', '2026-11-17', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'DK': [
+        // 2025
+        '2025-01-01', '2025-04-17', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-29', '2025-06-08', '2025-06-09', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-02', '2026-04-03', '2026-04-05', '2026-04-06', '2026-05-14', '2026-05-24', '2026-05-25', '2026-12-25', '2026-12-26'
+    ],
+    'DE': [
+        // 2025
+        '2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-10-03', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-10-03', '2026-12-25', '2026-12-26'
+    ],
+    'EE': [
+        // 2025
+        '2025-01-01', '2025-02-24', '2025-04-18', '2025-04-20', '2025-05-01', '2025-06-08', '2025-06-23', '2025-06-24', '2025-08-20', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-02-24', '2026-04-03', '2026-04-05', '2026-05-01', '2026-05-24', '2026-06-23', '2026-06-24', '2026-08-20', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'IE': [
+        // 2025
+        '2025-01-01', '2025-02-03', '2025-03-17', '2025-04-21', '2025-05-05', '2025-06-02', '2025-08-04', '2025-10-27', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-02-02', '2026-03-17', '2026-04-06', '2026-05-04', '2026-06-01', '2026-08-03', '2026-10-26', '2026-12-25', '2026-12-26'
+    ],
+    'EL': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-10-28', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-02-23', '2026-03-25', '2026-04-10', '2026-04-13', '2026-05-01', '2026-05-31', '2026-06-01', '2026-08-15', '2026-10-28', '2026-12-25', '2026-12-26'
+    ],
+    'ES': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-18', '2025-05-01', '2025-08-15', '2025-11-01', '2025-12-06', '2025-12-08', '2025-12-25',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-03', '2026-05-01', '2026-08-15', '2026-10-12', '2026-12-08', '2026-12-25'
+    ],
+    'FR': [
+        // 2025
+        '2025-01-01', '2025-04-21', '2025-05-01', '2025-05-08', '2025-05-29', '2025-06-09', '2025-07-14', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25',
+        // 2026
+        '2026-01-01', '2026-04-06', '2026-05-01', '2026-05-08', '2026-05-14', '2026-05-25', '2026-07-14', '2026-08-15', '2026-11-01', '2026-11-11', '2026-12-25'
+    ],
+    'HR': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-30', '2025-06-19', '2025-06-22', '2025-08-05', '2025-08-15', '2025-11-01', '2025-11-18', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-30', '2026-06-04', '2026-06-22', '2026-08-05', '2026-08-15', '2026-11-01', '2026-11-18', '2026-12-25', '2026-12-26'
+    ],
+    'IT': [
+        // 2025
+        '2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-07-21', '2026-08-15', '2026-10-04', '2026-11-01', '2026-12-25', '2026-12-26'
+    ],
+    'CY': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-15', '2025-10-01', '2025-10-28', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-02', '2026-04-03', '2026-04-06', '2026-04-10', '2026-04-13', '2026-05-01', '2026-05-14', '2026-05-15', '2026-05-25', '2026-10-01', '2026-11-02', '2026-12-24', '2026-12-25'
+    ],
+    'LV': [
+        // 2025
+        '2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-05', '2025-06-23', '2025-06-24', '2025-11-18', '2025-12-24', '2025-12-25', '2025-12-26', '2025-12-31',
+        // 2026
+        '2026-01-01', '2026-01-02', '2026-04-03', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-04', '2026-06-22', '2026-06-23', '2026-06-24', '2026-11-18', '2026-12-24', '2026-12-25', '2026-12-26', '2026-12-31'
+    ],
+    'LT': [
+        // 2025
+        '2025-01-01', '2025-02-16', '2025-03-11', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-04', '2025-06-01', '2025-06-24', '2025-07-06', '2025-08-15', '2025-11-01', '2025-11-02', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-02-16', '2026-03-11', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-03', '2026-06-07', '2026-06-24', '2026-07-06', '2026-08-15', '2026-11-01', '2026-11-02', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'LU': [
+        // 2025
+        '2025-01-01', '2025-04-21', '2025-05-01', '2025-05-09', '2025-05-29', '2025-06-09', '2025-06-23', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-06', '2026-05-01', '2026-05-09', '2026-05-14', '2026-05-25', '2026-06-23', '2026-08-15', '2026-11-01', '2026-12-25', '2026-12-26'
+    ],
+    'HU': [
+        // 2025
+        '2025-01-01', '2025-03-15', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-20', '2025-10-23', '2025-11-01', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-03-15', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-08-20', '2026-10-23', '2026-11-01', '2026-12-25', '2026-12-26'
+    ],
+    'MT': [
+        // 2025
+        '2025-01-01', '2025-02-10', '2025-03-19', '2025-03-31', '2025-04-18', '2025-05-01', '2025-06-07', '2025-06-29', '2025-08-15', '2025-09-08', '2025-09-21', '2025-12-08', '2025-12-13', '2025-12-25',
+        // 2026
+        '2026-01-01', '2026-02-10', '2026-03-19', '2026-03-31', '2026-04-03', '2026-05-01', '2026-06-07', '2026-06-29', '2026-08-15', '2026-09-08', '2026-09-21', '2026-12-08', '2026-12-13', '2026-12-25'
+    ],
+    'NL': [
+        // 2025
+        '2025-01-01', '2025-04-18', '2025-04-21', '2025-04-26', '2025-05-05', '2025-05-29', '2025-05-30', '2025-06-09', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-03', '2026-04-05', '2026-04-06', '2026-04-27', '2026-05-05', '2026-05-14', '2026-05-24', '2026-05-25', '2026-12-25', '2026-12-26'
+    ],
+    'AT': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-06-19', '2025-08-15', '2025-10-26', '2025-11-01', '2025-12-08', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-06-04', '2026-08-15', '2026-10-26', '2026-11-01', '2026-12-08', '2026-12-25', '2026-12-26'
+    ],
+    'PL': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-03', '2025-06-08', '2025-06-19', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-20', '2026-04-21', '2026-05-01', '2026-05-03', '2026-06-19', '2026-08-15', '2026-11-01', '2026-11-11', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'PT': [
+        // 2025
+        '2025-01-01', '2025-04-18', '2025-04-20', '2025-04-25', '2025-05-01', '2025-06-10', '2025-06-19', '2025-08-15', '2025-10-05', '2025-11-01', '2025-12-01', '2025-12-08', '2025-12-25',
+        // 2026
+        '2026-01-01', '2026-04-03', '2026-04-05', '2026-04-25', '2026-05-01', '2026-06-04', '2026-06-10', '2026-08-15', '2026-10-05', '2026-11-01', '2026-12-01', '2026-12-08', '2026-12-25'
+    ],
+    'RO': [
+        // 2025
+        '2025-01-01', '2025-01-02', '2025-01-06', '2025-01-07', '2025-01-24', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-11-30', '2025-12-01', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-02', '2026-01-06', '2026-01-07', '2026-01-24', '2026-04-10', '2026-04-12', '2026-04-13', '2026-05-01', '2026-05-31', '2026-06-01', '2026-08-15', '2026-11-30', '2026-12-01', '2026-12-25', '2026-12-26'
+    ],
+    'SI': [
+        // 2025
+        '2025-01-01', '2025-01-02', '2025-02-08', '2025-04-20', '2025-04-21', '2025-04-27', '2025-05-01', '2025-05-02', '2025-06-08', '2025-06-25', '2025-08-15', '2025-10-31', '2025-11-01', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-02', '2026-02-08', '2026-04-06', '2026-04-27', '2026-05-01', '2026-05-02', '2026-06-25', '2026-08-15', '2026-10-31', '2026-11-01', '2026-12-25', '2026-12-26'
+    ],
+    'SK': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-08-29', '2025-09-15', '2025-11-01', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-07-05', '2026-08-29', '2026-09-15', '2026-11-01', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'FI': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-20', '2025-12-06', '2025-12-24', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-14', '2026-06-19', '2026-12-06', '2026-12-24', '2026-12-25', '2026-12-26'
+    ],
+    'SE': [
+        // 2025
+        '2025-01-01', '2025-01-06', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-06', '2025-06-08', '2025-06-21', '2025-11-01', '2025-12-25', '2025-12-26',
+        // 2026
+        '2026-01-01', '2026-01-06', '2026-04-03', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-24', '2026-06-06', '2026-06-20', '2026-10-31', '2026-12-25', '2026-12-26'
+    ],
 
     // European Parliament holidays 2024-2025
     'EP': [
@@ -59,7 +194,7 @@ const holidayData = {
         '2024-05-20', // Whit Monday
         '2024-08-15', // Thursday, Assumption
         '2024-11-01', // Friday, All Saints' Day
-        
+
         // Office closing days 2024
         '2024-01-02', // Tuesday, day following New Year's Day
         '2024-03-28', // Maundy Thursday
@@ -87,7 +222,7 @@ const holidayData = {
         '2025-08-15', // Assumption
         // National Days (Note: these depend on place of employment)
         '2025-07-21', // National Day in Belgium
-        
+
         // Office closing days 2025
         '2025-01-02', // Day following New Year's Day
         '2025-01-03', // Second day following New Year's Day
@@ -217,7 +352,7 @@ function setCookie(name, value, days) {
 if (typeof document !== 'undefined') {
     // First check URL parameters, then fall back to cookies
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     // Load date format from URL or cookie
     const urlDateFormat = urlParams.get('format');
     if (urlDateFormat) {
@@ -253,13 +388,13 @@ function isHoliday(date) {
     if (isNaN(date.getTime())) {
         return false; // Invalid date is not a holiday
     }
-    
+
     // Format the date as YYYY-MM-DD for comparison with the holidays array
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
-    
+
     const holidays = holidayData[selectedHolidaySystem] || holidayData['EP'];
     return holidays.includes(dateString);
 }
@@ -343,7 +478,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
     // Step 1: Apply Article 3(1) - Skip the event hour/day (except for weeks, months, years per Case C-171/03)
     let startDate = new Date(eventDateTime);
-    
+
     if (periodType === 'hours') {
         startDate.setMinutes(0, 0, 0);
         if (isRetroactive) {
@@ -392,7 +527,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
     // Step 2: Apply Article 3(2) - Calculate the period
     let endDate = new Date(startDate);
-    
+
     if (periodType === 'hours') {
         if (isRetroactive) {
             endDate.setHours(endDate.getHours() - absolutePeriodValue + 1);
@@ -402,14 +537,14 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setMinutes(59, 59, 999);
         }
         const hourRule = appStrings?.appliedRules?.article32Hours || 'Article 3(2)(a) applied';
-        result.appliedRules.push(interpolateString(hourRule, { 
-            periodValue: absolutePeriodValue, 
-            retroactive: isRetroactive ? 'retroactive ' : '' 
+        result.appliedRules.push(interpolateString(hourRule, {
+            periodValue: absolutePeriodValue,
+            retroactive: isRetroactive ? 'retroactive ' : ''
         }));
     } else if (periodType === 'working-days') {
         let remainingDays = absolutePeriodValue;
         let currentDate = new Date(startDate);
-        
+
         if (isRetroactive) {
             while (remainingDays > 0) {
                 currentDate.setDate(currentDate.getDate() - 1);
@@ -432,9 +567,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setHours(23, 59, 59, 999);
         }
         const workingDaysRule = appStrings?.appliedRules?.article32WorkingDays || 'Article 3(2)(b) applied';
-        result.appliedRules.push(interpolateString(workingDaysRule, { 
-            periodValue: absolutePeriodValue, 
-            retroactive: isRetroactive ? 'retroactive ' : '' 
+        result.appliedRules.push(interpolateString(workingDaysRule, {
+            periodValue: absolutePeriodValue,
+            retroactive: isRetroactive ? 'retroactive ' : ''
         }));
     } else if (periodType === 'days') {
         if (isRetroactive) {
@@ -445,9 +580,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setHours(23, 59, 59, 999);
         }
         const calendarDaysRule = appStrings?.appliedRules?.article32CalendarDays || 'Article 3(2)(b) applied';
-        result.appliedRules.push(interpolateString(calendarDaysRule, { 
-            periodValue: absolutePeriodValue, 
-            retroactive: isRetroactive ? 'retroactive ' : '' 
+        result.appliedRules.push(interpolateString(calendarDaysRule, {
+            periodValue: absolutePeriodValue,
+            retroactive: isRetroactive ? 'retroactive ' : ''
         }));
     } else if (periodType === 'weeks') {
         if (isRetroactive) {
@@ -458,16 +593,16 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setHours(23, 59, 59, 999);
         }
         const weeksRule = appStrings?.appliedRules?.article32Weeks || 'Article 3(2)(c) applied';
-        result.appliedRules.push(interpolateString(weeksRule, { 
-            periodValue: absolutePeriodValue, 
-            retroactive: isRetroactive ? 'retroactive ' : '' 
+        result.appliedRules.push(interpolateString(weeksRule, {
+            periodValue: absolutePeriodValue,
+            retroactive: isRetroactive ? 'retroactive ' : ''
         }));
     } else if (periodType === 'months') {
         if (isRetroactive) {
             // For retroactive calculation, subtract months and handle overflow
             const originalDay = endDate.getDate();
             endDate.setMonth(endDate.getMonth() - absolutePeriodValue);
-            
+
             // If the original day doesn't exist in the target month, JavaScript will overflow
             // We need to adjust to the last day of the intended month according to Article 3(2)(c)
             const targetMonth = endDate.getMonth();
@@ -481,24 +616,24 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             const originalDay = endDate.getDate();
             const targetMonth = (endDate.getMonth() + absolutePeriodValue) % 12;
             const targetYear = endDate.getFullYear() + Math.floor((endDate.getMonth() + absolutePeriodValue) / 12);
-            
+
             endDate.setMonth(endDate.getMonth() + absolutePeriodValue);
-            
+
             // Check if overflow occurred (JavaScript automatically rolls to next month if day doesn't exist)
             if (endDate.getMonth() !== targetMonth || endDate.getFullYear() !== targetYear) {
                 // Overflow occurred - set to last day of intended target month per Article 3(2)(c)
                 endDate.setFullYear(targetYear);
                 endDate.setMonth(targetMonth + 1, 0); // Set to last day of target month
             }
-            
+
             // Article 3(2)(c): Period ends on the same date as the day from which it runs
             // The end date is the target date itself (already correctly calculated)
             endDate.setHours(23, 59, 59, 999);
         }
         const monthsRule = appStrings?.appliedRules?.article32Months || 'Article 3(2)(c) applied';
-        result.appliedRules.push(interpolateString(monthsRule, { 
-            periodValue: absolutePeriodValue, 
-            retroactive: isRetroactive ? 'retroactive ' : '' 
+        result.appliedRules.push(interpolateString(monthsRule, {
+            periodValue: absolutePeriodValue,
+            retroactive: isRetroactive ? 'retroactive ' : ''
         }));
     } else if (periodType === 'years') {
         if (isRetroactive) {
@@ -506,7 +641,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             const originalDay = endDate.getDate();
             const originalMonth = endDate.getMonth();
             endDate.setFullYear(endDate.getFullYear() - absolutePeriodValue);
-            
+
             // If the original day doesn't exist in the target year (e.g., Feb 29 in non-leap year)
             if (endDate.getDate() !== originalDay || endDate.getMonth() !== originalMonth) {
                 // Overflow occurred, set to last day of intended month per Article 3(2)(c)
@@ -518,21 +653,21 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             const originalDay = endDate.getDate();
             const originalMonth = endDate.getMonth();
             endDate.setFullYear(endDate.getFullYear() + absolutePeriodValue);
-            
+
             // Check if overflow occurred (e.g., Feb 29 to non-leap year)
             if (endDate.getDate() !== originalDay || endDate.getMonth() !== originalMonth) {
                 // Overflow occurred - set to last day of intended month in target year per Article 3(2)(c)
                 endDate.setMonth(originalMonth + 1, 0); // Set to last day of target month
             }
-            
+
             // Article 3(2)(c): Period ends on the same date as the day from which it runs
             // The end date is the target date itself (already correctly calculated)
             endDate.setHours(23, 59, 59, 999);
         }
         const yearsRule = appStrings?.appliedRules?.article32Years || 'Article 3(2)(c) applied';
-        result.appliedRules.push(interpolateString(yearsRule, { 
-            periodValue: absolutePeriodValue, 
-            retroactive: isRetroactive ? 'retroactive ' : '' 
+        result.appliedRules.push(interpolateString(yearsRule, {
+            periodValue: absolutePeriodValue,
+            retroactive: isRetroactive ? 'retroactive ' : ''
         }));
     }
 
@@ -547,7 +682,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         const article34Details = appStrings?.appliedRules?.article34ExtensionDetails || 'Extension details';
         result.appliedRules.push(
             article34Rule,
-            interpolateString(article34Details, { 
+            interpolateString(article34Details, {
                 previousDate: formatDateTime(result.initialEndDate),
                 extendedDate: formatDateTime(endDate)
             })
@@ -562,10 +697,10 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         currentDate.setHours(0, 0, 0, 0);
         const endDateCopy = new Date(endDate);
         endDateCopy.setHours(23, 59, 59, 999);
-        
+
         // Log the period for debugging
         console.log(`Checking working days from ${formatDate(currentDate)} to ${formatDate(endDateCopy)}`);
-        
+
         // First, count working days in the original period
         while (currentDate <= endDateCopy) {
             if (isWorkingDay(currentDate)) {
@@ -574,26 +709,26 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             }
             currentDate.setDate(currentDate.getDate() + 1);
         }
-        
+
         result.workingDaysCount = workingDays;
         console.log(`Total working days found: ${workingDays}`);
-        
+
         if (workingDays < 2) {
             if (isRetroactive) {
                 // For retroactive periods, extend backward
                 let prevWorkDay = new Date(startDate);
                 prevWorkDay.setHours(0, 0, 0, 0);
-                
+
                 // Find the previous working day
                 while (!isWorkingDay(prevWorkDay)) {
                     prevWorkDay.setDate(prevWorkDay.getDate() - 1);
                 }
-                
+
                 // Count working days in the backward extended period
                 currentDate = new Date(prevWorkDay);
                 currentDate.setHours(0, 0, 0, 0);
                 workingDays = 0;
-                
+
                 while (currentDate <= endDateCopy) {
                     if (isWorkingDay(currentDate)) {
                         workingDays++;
@@ -601,16 +736,16 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                     }
                     currentDate.setDate(currentDate.getDate() + 1);
                 }
-                
+
                 console.log(`Total working days in backward extended period: ${workingDays}`);
-                
+
                 if (workingDays >= 2) {
                     startDate = prevWorkDay;
                     const article35Rule = appStrings?.appliedRules?.article35Extension || 'Article 3(5) applied';
                     const article35Details = appStrings?.appliedRules?.article35ExtensionDetails || 'Extension details';
                     result.appliedRules.push(
                         interpolateString(article35Rule, { direction: 'backward' }),
-                        interpolateString(article35Details, { 
+                        interpolateString(article35Details, {
                             startOrEnd: 'start',
                             originalDate: formatDateTime(result.initialEndDate),
                             extendedDate: formatDate(startDate)
@@ -628,32 +763,32 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 // For forward periods, extend forward to include at least two working days total
                 let nextWorkDay = findNextWorkingDay(endDateCopy);
                 nextWorkDay.setHours(23, 59, 59, 999);
-                
+
                 // We already found one working day, so we need to find at least one more
                 // If we didn't find any working days in the original period, extend until we find two
                 let requiredAdditionalWorkingDays = 2 - workingDays;
                 let foundAdditionalWorkingDays = 0;
                 let currentWorkDay = new Date(nextWorkDay);
-                
+
                 while (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
                     if (isWorkingDay(currentWorkDay)) {
                         foundAdditionalWorkingDays++;
                         console.log(`Found additional working day: ${formatDate(currentWorkDay)}`);
                     }
-                    
+
                     if (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
                         currentWorkDay.setDate(currentWorkDay.getDate() + 1);
                     }
                 }
-                
+
                 endDate = new Date(currentWorkDay);
                 endDate.setHours(23, 59, 59, 999);
-                
+
                 const article35Rule = appStrings?.appliedRules?.article35Extension || 'Article 3(5) applied';
                 const article35Details = appStrings?.appliedRules?.article35ExtensionDetails || 'Extension details';
                 result.appliedRules.push(
                     interpolateString(article35Rule, { direction: 'forward' }),
-                    interpolateString(article35Details, { 
+                    interpolateString(article35Details, {
                         startOrEnd: 'end',
                         originalDate: formatDateTime(result.initialEndDate),
                         extendedDate: formatDateTime(endDate)
@@ -671,16 +806,16 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     }
 
     result.finalEndDate = endDate;
-    
+
     // Check holiday data coverage for the calculated period
     const periodStart = new Date(Math.min(result.startDate, result.finalEndDate));
     const periodEnd = new Date(Math.max(result.startDate, result.finalEndDate));
-    
+
     const coverage = checkHolidayDataCoverage(periodStart, periodEnd, selectedHolidaySystem);
     if (!coverage.isComplete) {
         result.holidayDataWarning = generateHolidayWarning(coverage, selectedHolidaySystem);
     }
-    
+
     return result;
 }
 
@@ -691,7 +826,7 @@ function renderCalendar(result) {
     // Create legend using safe DOM manipulation instead of innerHTML
     const legend = document.createElement('div');
     legend.className = 'calendar-legend';
-    
+
     // Define legend items with their styles and labels
     const legendLabels = appStrings?.legend || {};
     const legendItems = [
@@ -706,15 +841,15 @@ function renderCalendar(result) {
         { border: '1px dashed #1a73e8', label: legendLabels.extension || 'Extension' },
         { border: '2px solid #dc3545', label: legendLabels.today || 'Today' }
     ];
-    
+
     // Create each legend item safely
     legendItems.forEach(item => {
         const legendItem = document.createElement('div');
         legendItem.className = 'legend-item';
-        
+
         const legendColor = document.createElement('div');
         legendColor.className = 'legend-color';
-        
+
         // Apply styles safely
         if (item.color) {
             legendColor.style.backgroundColor = item.color;
@@ -725,10 +860,10 @@ function renderCalendar(result) {
         if (item.border) {
             legendColor.style.border = item.border;
         }
-        
+
         const legendLabel = document.createElement('span');
         legendLabel.textContent = item.label;
-        
+
         legendItem.appendChild(legendColor);
         legendItem.appendChild(legendLabel);
         legend.appendChild(legendItem);
@@ -743,11 +878,11 @@ function renderCalendar(result) {
     // Get the date range to display
     const startDate = new Date(result.startDate);
     const endDate = new Date(result.finalEndDate);
-    
+
     // For retroactive calculations, swap start and end dates for display purposes
     const displayStart = new Date(Math.min(startDate, endDate));
     const displayEnd = new Date(Math.max(startDate, endDate));
-    
+
     // Get first day of start month and last day of end month
     const firstDisplayMonth = new Date(displayStart.getFullYear(), displayStart.getMonth(), 1);
     const lastDisplayMonth = new Date(displayEnd.getFullYear(), displayEnd.getMonth() + 1, 0);
@@ -791,26 +926,26 @@ function renderMonthCalendar(date, result, container) {
     // Get first day of month and last day of month
     const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    
+
     // Calculate padding for Monday start
     let firstDayPadding = firstDay.getDay() - 1;
     if (firstDayPadding === -1) firstDayPadding = 6; // Sunday should be 6 when starting on Monday
-    
+
     // Create a grid of all days
     const totalDays = firstDayPadding + lastDay.getDate();
     const totalWeeks = Math.ceil(totalDays / 7);
-    
+
     // Create week rows
     for (let week = 0; week < totalWeeks; week++) {
         const weekRow = document.createElement('div');
         weekRow.className = 'calendar-week';
-        
+
         // Add days in this week
         for (let weekday = 0; weekday < 7; weekday++) {
             const dayNumber = week * 7 + weekday - firstDayPadding + 1;
             const dayElement = document.createElement('div');
             dayElement.className = 'calendar-day';
-            
+
             if (dayNumber > 0 && dayNumber <= lastDay.getDate()) {
                 const currentDate = new Date(date.getFullYear(), date.getMonth(), dayNumber);
                 dayElement.textContent = dayNumber;
@@ -844,7 +979,7 @@ function renderMonthCalendar(date, result, container) {
                 const isStartDate = isSameDay(currentDate, result.startDate);
                 const isEventDate = isSameDay(currentDate, result.eventDate);
                 const isEndDate = isSameDay(currentDate, result.finalEndDate);
-                
+
                 if (isStartDate && isEventDate) {
                     // Both start and event date - show diagonal split
                     dayElement.classList.add('start-event-date');
@@ -853,7 +988,7 @@ function renderMonthCalendar(date, result, container) {
                 } else if (isEventDate) {
                     dayElement.classList.add('event-date');
                 }
-                
+
                 if (isEndDate) {
                     dayElement.classList.add('end-date');
                 }
@@ -868,10 +1003,10 @@ function renderMonthCalendar(date, result, container) {
                     }
                 }
             }
-            
+
             weekRow.appendChild(dayElement);
         }
-        
+
         calendar.appendChild(weekRow);
     }
 
@@ -881,8 +1016,8 @@ function renderMonthCalendar(date, result, container) {
 // Helper function to compare dates without time
 function isSameDay(date1, date2) {
     return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate();
 }
 
 
@@ -898,10 +1033,10 @@ function createResultElement(result) {
     const endDateLabel = appStrings?.ui?.endDateLabel || 'End Date: {endDate}';
     endDateDiv.textContent = interpolateString(endDateLabel, { endDate: formatDateTime(result.finalEndDate) });
     container.appendChild(endDateDiv);
-    
+
     // Add holiday system information
     const getHolidaySystemNames = () => appStrings?.holidaySystems || {};
-    
+
     const holidaySystemDiv = document.createElement('div');
     holidaySystemDiv.style.cssText = 'font-size: 12px; color: #666; margin-bottom: 10px;';
     const holidaySystemNames = getHolidaySystemNames();
@@ -909,13 +1044,13 @@ function createResultElement(result) {
     const holidayInfo = appStrings?.ui?.holidaySystemInfo || 'Using {systemName} public holidays';
     holidaySystemDiv.textContent = interpolateString(holidayInfo, { systemName });
     container.appendChild(holidaySystemDiv);
-    
+
     // Add holiday data warning if applicable
     if (result.holidayDataWarning) {
         const warningDiv = document.createElement('div');
         warningDiv.className = 'holiday-warning';
         warningDiv.style.cssText = 'background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 14px;';
-        
+
         // Safely extract and display the warning message by completely stripping all HTML
         // This prevents any potential HTML injection vulnerabilities
         let cleanWarning = result.holidayDataWarning;
@@ -924,16 +1059,16 @@ function createResultElement(result) {
             previousWarning = cleanWarning;
             cleanWarning = cleanWarning.replace(/<[^>]*>/g, '');
         } while (previousWarning !== cleanWarning);
-        
+
         // Use textContent to safely set the warning text (no HTML interpretation)
         warningDiv.textContent = cleanWarning;
         container.appendChild(warningDiv);
     }
-    
+
     // Add explanation
     const explanationDiv = document.createElement('div');
     explanationDiv.className = 'result-explanation';
-    
+
     // Step 1: Always explain Article 3(1)
     if (result.explanation.length > 0 && result.explanation[0].includes('Article 3(1)')) {
         const para1 = document.createElement('span');
@@ -944,14 +1079,14 @@ function createResultElement(result) {
             const linkRegex = /<a href="(https:\/\/eur-lex\.europa\.eu[^"]*)"[^>]*>([^<]*)<\/a>/g;
             let lastIndex = 0;
             let match;
-            
+
             while ((match = linkRegex.exec(explanation)) !== null) {
                 // Add text before the link
                 if (match.index > lastIndex) {
                     const textNode = document.createTextNode(explanation.substring(lastIndex, match.index));
                     para1.appendChild(textNode);
                 }
-                
+
                 // Create safe link
                 const link = document.createElement('a');
                 link.href = match[1]; // Already validated by regex to be EUR-Lex domain
@@ -959,10 +1094,10 @@ function createResultElement(result) {
                 link.rel = 'noopener';
                 link.textContent = match[2];
                 para1.appendChild(link);
-                
+
                 lastIndex = match.index + match[0].length;
             }
-            
+
             // Add remaining text
             if (lastIndex < explanation.length) {
                 const textNode = document.createTextNode(explanation.substring(lastIndex));
@@ -973,15 +1108,15 @@ function createResultElement(result) {
         }
         explanationDiv.appendChild(para1);
     }
-    
+
     // Check which rules were applied
     const article34Applied = result.appliedRules.some(rule => rule.includes('Article 3(4)'));
     const article35Applied = result.appliedRules.some(rule => rule.includes('Article 3(5)'));
-    
+
     // Step 2: Explain initial end date calculation
     if (result.initialEndDate) {
         const initialDateStr = formatDate(result.initialEndDate);
-        
+
         if (article34Applied) {
             // For Article 3(4), the final end date is the extended date
             const br = document.createElement('br');
@@ -991,7 +1126,7 @@ function createResultElement(result) {
             explanationDiv.appendChild(para2);
         }
     }
-    
+
     // Step 3: Explain Article 3(5) if applied
     if (article35Applied && result.explanation.find(exp => exp.includes('Article 3(5)'))) {
         const br = document.createElement('br');
@@ -1000,29 +1135,29 @@ function createResultElement(result) {
         para3.textContent = result.explanation.find(exp => exp.includes('Article 3(5)'));
         explanationDiv.appendChild(para3);
     }
-    
+
     container.appendChild(explanationDiv);
-    
+
     // Add calendar export section
     const exportDiv = document.createElement('div');
     exportDiv.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; text-align: center;';
-    
+
     const buttonContainer = document.createElement('div');
     buttonContainer.style.cssText = 'display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;';
-    
+
     const calendarBtn = document.createElement('button');
     calendarBtn.className = 'calendar-export-trigger';
     calendarBtn.textContent = '📅 Export to Calendar';
     calendarBtn.onclick = openCalendarModal;
     buttonContainer.appendChild(calendarBtn);
-    
+
     const shareBtn = document.createElement('button');
     shareBtn.className = 'calendar-export-trigger';
     shareBtn.title = 'Copy shareable link';
     shareBtn.textContent = '🔗 Share Link';
     shareBtn.onclick = copyPermalinkToClipboard;
     buttonContainer.appendChild(shareBtn);
-    
+
     exportDiv.appendChild(buttonContainer);
     container.appendChild(exportDiv);
 
@@ -1031,7 +1166,7 @@ function createResultElement(result) {
 
     // Render the calendar visualization
     renderCalendar(result);
-    
+
     return container;
 }
 
@@ -1039,12 +1174,12 @@ function createResultElement(result) {
 function getHolidayDataYears(holidaySystem) {
     const holidays = holidayData[holidaySystem] || [];
     const years = new Set();
-    
+
     holidays.forEach(dateStr => {
         const year = parseInt(dateStr.split('-')[0]);
         years.add(year);
     });
-    
+
     return Array.from(years).sort();
 }
 
@@ -1053,14 +1188,14 @@ function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
     const availableYears = getHolidayDataYears(holidaySystem);
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
-    
+
     const missingYears = [];
-    
+
     for (let year = startYear; year <= endYear; year++) {
         if (holidaySystem === 'EP') {
             const holidays = holidayData[holidaySystem] || [];
             const yearHolidays = holidays.filter(dateStr => dateStr.startsWith(`${year}-`));
-            
+
             if (yearHolidays.length === 0) {
                 // No data at all for this year
                 missingYears.push(year);
@@ -1070,15 +1205,15 @@ function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
                     const date = dateStr.split('-');
                     return date[1] === '01' && parseInt(date[2]) <= 7; // First week
                 });
-                
+
                 if (hasOnlyNewYearDays) {
                     // If we only have January 1-7 holidays, we don't have the full year's holidays
                     const yearEarlyJan = new Date(year, 0, 7, 23, 59, 59, 999); // End of Jan 7
-                    
+
                     // Check if any part of our period in this year extends beyond the New Year period
                     const periodStartInYear = year === startYear ? startDate : new Date(year, 0, 1);
                     const periodEndInYear = year === endYear ? endDate : new Date(year, 11, 31, 23, 59, 59, 999);
-                    
+
                     if (periodEndInYear > yearEarlyJan) {
                         // Period extends beyond New Year data coverage
                         missingYears.push(year);
@@ -1092,7 +1227,7 @@ function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
             }
         }
     }
-    
+
     return {
         isComplete: missingYears.length === 0,
         missingYears: missingYears,
@@ -1105,29 +1240,29 @@ function generateHolidayWarning(coverage, holidaySystem) {
     if (coverage.isComplete) {
         return null;
     }
-    
+
     const holidaySystemNames = appStrings?.holidaySystems || {};
     const systemName = holidaySystemNames[holidaySystem] || holidaySystem;
     const missingYearsStr = coverage.missingYears.join(', ');
-    const availableYearsStr = coverage.availableYears.length > 0 ? 
+    const availableYearsStr = coverage.availableYears.length > 0 ?
         coverage.availableYears.join(', ') : 'none';
-    
+
     const isSingle = coverage.missingYears.length === 1;
     const plural = coverage.missingYears.length > 1 ? 's' : '';
-    
+
     let warningTemplate;
-    
+
     if (holidaySystem === 'EP' && coverage.missingYears.length > 0) {
         // Special message for European Parliament partial data
-        warningTemplate = isSingle ? 
+        warningTemplate = isSingle ?
             (appStrings?.holidayWarnings?.epWarningSingle || 'EP warning') :
             (appStrings?.holidayWarnings?.epWarning || 'EP warning');
     } else {
-        warningTemplate = isSingle ? 
+        warningTemplate = isSingle ?
             (appStrings?.holidayWarnings?.memberStateWarningSingle || 'Member state warning') :
             (appStrings?.holidayWarnings?.memberStateWarning || 'Member state warning');
     }
-    
+
     return interpolateString(warningTemplate, {
         systemName,
         missingYears: missingYearsStr,
@@ -1152,7 +1287,7 @@ function formatICalAllDayDate(date) {
 // Security function to sanitize text for iCal format
 function sanitizeICalText(text) {
     if (!text) return '';
-    
+
     return text
         // Limit length to reasonable size (75 chars per RFC 5545 line folding, but we'll be more generous for titles)
         .slice(0, 100)
@@ -1172,7 +1307,7 @@ function sanitizeICalText(text) {
 // Security function to sanitize text for URL parameters
 function sanitizeUrlText(text) {
     if (!text) return '';
-    
+
     return text
         // Limit length for URLs (browsers have limits, Google Calendar has specific limits)
         .slice(0, 100)
@@ -1185,7 +1320,7 @@ function sanitizeUrlText(text) {
 // Client-side validation function for event names
 function validateEventName(text) {
     if (!text) return { valid: true, sanitized: '' };
-    
+
     // Check for obviously malicious patterns
     const suspiciousPatterns = [
         /BEGIN:/i,
@@ -1208,17 +1343,17 @@ function validateEventName(text) {
         /\\x[0-9a-f]{2}/i, // Hex encoded characters
         /\\u[0-9a-f]{4}/i  // Unicode escape sequences
     ];
-    
+
     for (const pattern of suspiciousPatterns) {
         if (pattern.test(text)) {
-                    return {
-            valid: false, 
-            error: appStrings?.ui?.validationErrorInvalidChars || 'Invalid characters',
-            sanitized: ''
-        };
+            return {
+                valid: false,
+                error: appStrings?.ui?.validationErrorInvalidChars || 'Invalid characters',
+                sanitized: ''
+            };
         }
     }
-    
+
     // Check for too many special characters (might indicate injection attempt)
     const specialCharCount = (text.match(/[<>\"&;{}\\]/g) || []).length;
     if (specialCharCount > 3) {
@@ -1228,7 +1363,7 @@ function validateEventName(text) {
             sanitized: text.replace(/[<>\"&;{}\\]/g, '').trim()
         };
     }
-    
+
     // Length check
     if (text.length > 100) {
         return {
@@ -1237,12 +1372,12 @@ function validateEventName(text) {
             sanitized: text.slice(0, 100)
         };
     }
-    
+
     // Basic sanitization for display
     const sanitized = text
         .replace(/[\r\n\u2028\u2029\x00-\x1F\x7F]/g, '')
         .trim();
-    
+
     return { valid: true, sanitized };
 }
 
@@ -1250,29 +1385,29 @@ function validateEventName(text) {
 function generateDeadlineICalEvent(result, deadlineName, periodDescription) {
     const now = new Date();
     const deadlineDate = new Date(result.finalEndDate);
-    
+
     // For all-day event on deadline day
     const startAllDay = new Date(deadlineDate);
     startAllDay.setHours(0, 0, 0, 0);
-    
+
     const endAllDay = new Date(deadlineDate);
     endAllDay.setDate(endAllDay.getDate() + 1); // iCal end date is exclusive for all-day events
     endAllDay.setHours(0, 0, 0, 0);
-    
+
     const eventId = `deadline-${now.getTime()}@eu-periods-calculator.com`;
-    
+
     // Sanitize user input for iCal format
     const safeTitle = sanitizeICalText(deadlineName) || 'EU Regulation 1182/71 Deadline';
     const safePeriodDescription = sanitizeICalText(periodDescription);
-    
+
     // Build description with safe, static content
     const description = `Calculated deadline based on EU Regulation 1182/71\\n\\n` +
-                       `Period: ${safePeriodDescription}\\n` +
-                       `Event Date: ${sanitizeICalText(formatDate(result.eventDate))}\\n` +
-                       `Calculated End Date: ${sanitizeICalText(formatDateTime(result.finalEndDate))}\\n\\n` +
-                       `Applied Rules:\\n${result.appliedRules.map(rule => sanitizeICalText(rule)).join('\\n')}\\n\\n` +
-                       `Generated by https://time-limits.bdamokos.org`;
-    
+        `Period: ${safePeriodDescription}\\n` +
+        `Event Date: ${sanitizeICalText(formatDate(result.eventDate))}\\n` +
+        `Calculated End Date: ${sanitizeICalText(formatDateTime(result.finalEndDate))}\\n\\n` +
+        `Applied Rules:\\n${result.appliedRules.map(rule => sanitizeICalText(rule)).join('\\n')}\\n\\n` +
+        `Generated by https://time-limits.bdamokos.org`;
+
     const icalContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//EU Time Limits Calculator//EN
@@ -1302,31 +1437,31 @@ function generatePeriodICalEvent(result, deadlineName, periodDescription) {
     const now = new Date();
     const startDate = new Date(result.eventDate);
     const endDate = new Date(result.finalEndDate);
-    
+
     // For all-day events spanning multiple days
     const startAllDay = new Date(startDate);
     startAllDay.setHours(0, 0, 0, 0);
-    
+
     const endAllDay = new Date(endDate);
     endAllDay.setDate(endAllDay.getDate() + 1); // iCal end date is exclusive
     endAllDay.setHours(0, 0, 0, 0);
-    
+
     const eventId = `period-${now.getTime()}@eu-periods-calculator.com`;
-    
+
     // Sanitize user input for iCal format
     const safeName = sanitizeICalText(deadlineName) || 'Legal Deadline';
     const title = `EU Period: ${safeName}`;
     const safePeriodDescription = sanitizeICalText(periodDescription);
-    
+
     // Build description with safe, static content
     const description = `EU Regulation 1182/71 Period Calculation\\n\\n` +
-                       `Period: ${safePeriodDescription}\\n` +
-                       `Start (Event Date): ${sanitizeICalText(formatDate(result.eventDate))}\\n` +
-                       `End (Deadline): ${sanitizeICalText(formatDateTime(result.finalEndDate))}\\n\\n` +
-                       `Applied Rules:\\n${result.appliedRules.map(rule => sanitizeICalText(rule)).join('\\n')}\\n\\n` +
-                       `This event spans the entire calculated period.\\n\\n` +
-                       `Generated by https://time-limits.bdamokos.org`;
-    
+        `Period: ${safePeriodDescription}\\n` +
+        `Start (Event Date): ${sanitizeICalText(formatDate(result.eventDate))}\\n` +
+        `End (Deadline): ${sanitizeICalText(formatDateTime(result.finalEndDate))}\\n\\n` +
+        `Applied Rules:\\n${result.appliedRules.map(rule => sanitizeICalText(rule)).join('\\n')}\\n\\n` +
+        `This event spans the entire calculated period.\\n\\n` +
+        `Generated by https://time-limits.bdamokos.org`;
+
     const icalContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//EU Time Limits Calculator//EN
@@ -1365,13 +1500,13 @@ function generateGoogleCalendarLink(result, deadlineName, periodDescription, isD
         const deadlineDate = new Date(result.finalEndDate);
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Google expects end date to be exclusive
-        
+
         // Sanitize and encode for URL
         const safeTitle = sanitizeUrlText(deadlineName) || 'EU Regulation 1182/71 Deadline';
         const title = encodeURIComponent(safeTitle);
         const startDateStr = formatICalAllDayDate(deadlineDate);
         const endDateStr = formatICalAllDayDate(endDate);
-        
+
         // Build description with sanitized content
         const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
@@ -1382,20 +1517,20 @@ function generateGoogleCalendarLink(result, deadlineName, periodDescription, isD
             `Applied Rules: ${result.appliedRules.map(rule => sanitizeUrlText(rule)).join(', ')}\n\n` +
             `Generated by https://time-limits.bdamokos.org`
         );
-        
+
         return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateStr}/${endDateStr}&details=${description}`;
     } else {
         // Period view - all day event
         const startDate = new Date(result.eventDate);
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Google expects end date to be exclusive
-        
+
         // Sanitize and encode for URL
         const safeName = sanitizeUrlText(deadlineName) || 'Legal Deadline';
         const title = encodeURIComponent(`EU Period: ${safeName}`);
         const startDateStr = formatICalAllDayDate(startDate);
         const endDateStr = formatICalAllDayDate(endDate);
-        
+
         // Build description with sanitized content
         const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
@@ -1407,7 +1542,7 @@ function generateGoogleCalendarLink(result, deadlineName, periodDescription, isD
             `This event spans the entire calculated period.\n\n` +
             `Generated by https://time-limits.bdamokos.org`
         );
-        
+
         return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDateStr}/${endDateStr}&details=${description}`;
     }
 }
@@ -1419,13 +1554,13 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
         const deadlineDate = new Date(result.finalEndDate);
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Outlook expects end date to be exclusive
-        
+
         // Sanitize and encode for URL
         const safeTitle = sanitizeUrlText(deadlineName) || 'EU Regulation 1182/71 Deadline';
         const title = encodeURIComponent(safeTitle);
         const startDateStr = formatICalAllDayDate(deadlineDate);
         const endDateStr = formatICalAllDayDate(endDate);
-        
+
         // Build description with sanitized content
         const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
@@ -1436,20 +1571,20 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
             `Applied Rules: ${result.appliedRules.map(rule => sanitizeUrlText(rule)).join(', ')}\n\n` +
             `Generated by https://time-limits.bdamokos.org`
         );
-        
+
         return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDateStr}&enddt=${endDateStr}&allday=true&body=${description}`;
     } else {
         // Period view - all day event
         const startDate = new Date(result.eventDate);
         const endDate = new Date(result.finalEndDate);
         endDate.setDate(endDate.getDate() + 1); // Outlook expects end date to be exclusive
-        
+
         // Sanitize and encode for URL
         const safeName = sanitizeUrlText(deadlineName) || 'Legal Deadline';
         const title = encodeURIComponent(`EU Period: ${safeName}`);
         const startDateStr = formatICalAllDayDate(startDate);
         const endDateStr = formatICalAllDayDate(endDate);
-        
+
         // Build description with sanitized content
         const safePeriodDescription = sanitizeUrlText(periodDescription);
         const description = encodeURIComponent(
@@ -1461,7 +1596,7 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
             `This event spans the entire calculated period.\n\n` +
             `Generated by https://time-limits.bdamokos.org`
         );
-        
+
         return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${startDateStr}&enddt=${endDateStr}&allday=true&body=${description}`;
     }
 }
@@ -1469,10 +1604,10 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
 // Modal functions
 function openCalendarModal() {
     if (!window.currentCalculationResult) return;
-    
+
     const modal = document.getElementById('calendarModal');
     modal.style.display = 'flex';
-    
+
     // Set focus to event name input and populate from permalink if available
     setTimeout(() => {
         const eventNameInput = document.getElementById('modalDeadlineName');
@@ -1491,10 +1626,10 @@ function closeCalendarModal() {
 // Modal export handler
 function handleModalExport(exportType, format) {
     if (!window.currentCalculationResult) return;
-    
+
     const deadlineNameInput = document.getElementById('modalDeadlineName');
     const deadlineName = deadlineNameInput.value || '';
-    
+
     // Validate event name client-side
     const validation = validateEventName(deadlineName);
     if (!validation.valid) {
@@ -1502,17 +1637,17 @@ function handleModalExport(exportType, format) {
         showValidationError(deadlineNameInput, validation.error);
         return;
     }
-    
+
     // Clear any existing validation errors
     clearValidationError(deadlineNameInput);
-    
+
     const periodValue = document.getElementById('periodValue').value;
     const periodType = document.getElementById('periodType').value;
     const periodDescription = `${periodValue} ${periodType}`;
-    
+
     // Use the validated/sanitized name
     const safeDeadlineName = validation.sanitized;
-    
+
     if (exportType === 'deadline') {
         if (format === 'ical') {
             const icalContent = generateDeadlineICalEvent(window.currentCalculationResult, safeDeadlineName, periodDescription);
@@ -1538,7 +1673,7 @@ function handleModalExport(exportType, format) {
             window.open(outlookLink, '_blank', 'noopener');
         }
     }
-    
+
     // Close modal after export
     closeCalendarModal();
 }
@@ -1547,11 +1682,11 @@ function handleModalExport(exportType, format) {
 function showValidationError(inputElement, errorMessage) {
     // Remove any existing error
     clearValidationError(inputElement);
-    
+
     // Add error styling
     inputElement.style.borderColor = '#dc3545';
     inputElement.style.backgroundColor = '#fff5f5';
-    
+
     // Create error message element
     const errorDiv = document.createElement('div');
     errorDiv.className = 'validation-error';
@@ -1562,10 +1697,10 @@ function showValidationError(inputElement, errorMessage) {
         padding: 2px 0;
     `;
     errorDiv.textContent = errorMessage;
-    
+
     // Insert error message after the input
     inputElement.parentNode.insertBefore(errorDiv, inputElement.nextSibling);
-    
+
     // Focus the input
     inputElement.focus();
 }
@@ -1575,7 +1710,7 @@ function clearValidationError(inputElement) {
     // Reset input styling
     inputElement.style.borderColor = '';
     inputElement.style.backgroundColor = '';
-    
+
     // Remove error message
     const errorDiv = inputElement.parentNode.querySelector('.validation-error');
     if (errorDiv) {
@@ -1586,7 +1721,7 @@ function clearValidationError(inputElement) {
 // Browser-only code
 if (typeof document !== 'undefined') {
     // Close modal when clicking outside
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         const modal = document.getElementById('calendarModal');
         if (event.target === modal) {
             closeCalendarModal();
@@ -1594,7 +1729,7 @@ if (typeof document !== 'undefined') {
     });
 
     // Close modal with Escape key
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeCalendarModal();
         }
@@ -1604,18 +1739,18 @@ if (typeof document !== 'undefined') {
 // Function to handle form submission
 function handleSubmit(event) {
     event.preventDefault();
-    
+
     const eventDate = document.getElementById('eventDate').value;
     const eventTime = document.getElementById('eventTime').value;
     const periodValue = parseInt(document.getElementById('periodValue').value);
     const periodType = document.getElementById('periodType').value;
-    
+
     // Validate time input for hour-based calculations
     if (periodType === 'hours' && !eventTime) {
         alert('Event time is required for hour-based calculations');
         return;
     }
-    
+
     // Create event date/time
     const eventDateTime = new Date(eventDate);
     if (eventTime) {
@@ -1625,35 +1760,35 @@ function handleSubmit(event) {
         // If no time provided, set to start of day
         eventDateTime.setHours(0, 0, 0, 0);
     }
-    
-            const result = calculatePeriod(eventDateTime, periodValue, periodType);
-        const resultContainer = document.getElementById('result');
-        resultContainer.replaceChildren(); // Clear previous content safely
-        resultContainer.appendChild(createResultElement(result));
+
+    const result = calculatePeriod(eventDateTime, periodValue, periodType);
+    const resultContainer = document.getElementById('result');
+    resultContainer.replaceChildren(); // Clear previous content safely
+    resultContainer.appendChild(createResultElement(result));
 }
 
 // Permalink functionality
 function generatePermalink(includeEventName = false) {
     if (typeof window === 'undefined') return '';
-    
+
     const params = new URLSearchParams();
-    
+
     // Get current form values
     const eventDate = document.getElementById('eventDate')?.value;
     const eventTime = document.getElementById('eventTime')?.value;
     const periodValue = document.getElementById('periodValue')?.value;
     const periodType = document.getElementById('periodType')?.value;
-    
+
     // Add required parameters
     if (eventDate) params.set('date', eventDate);
     if (eventTime) params.set('time', eventTime);
     if (periodValue) params.set('period', periodValue);
     if (periodType) params.set('type', periodType);
-    
+
     // Add settings
     if (selectedHolidaySystem !== 'EP') params.set('holidays', sanitizeHolidaySystem(selectedHolidaySystem));
     if (dateFormat !== 'dmy-text') params.set('format', sanitizeDateFormat(dateFormat));
-    
+
     // Add event name if requested and available
     if (includeEventName) {
         const eventName = document.getElementById('modalDeadlineName')?.value;
@@ -1662,17 +1797,17 @@ function generatePermalink(includeEventName = false) {
             params.set('name', safeName);
         }
     }
-    
+
     const baseUrl = window.location.origin + window.location.pathname;
     return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl;
 }
 
 function updateUrlFromForm() {
     if (typeof window === 'undefined' || typeof history === 'undefined') return;
-    
+
     const permalink = generatePermalink();
     const newUrl = permalink;
-    
+
     // Only update if URL would actually change
     if (newUrl !== window.location.href) {
         history.replaceState(null, '', newUrl);
@@ -1681,17 +1816,17 @@ function updateUrlFromForm() {
 
 function loadStateFromUrl() {
     if (typeof window === 'undefined') return false;
-    
+
     const urlParams = new URLSearchParams(window.location.search);
     let hasParams = false;
-    
+
     // Load form values from URL
     const eventDate = urlParams.get('date');
     const eventTime = urlParams.get('time');
     const periodValue = urlParams.get('period');
     const periodType = urlParams.get('type');
     const eventName = urlParams.get('name');
-    
+
     if (eventDate) {
         const eventDateInput = document.getElementById('eventDate');
         if (eventDateInput) {
@@ -1699,7 +1834,7 @@ function loadStateFromUrl() {
             hasParams = true;
         }
     }
-    
+
     if (eventTime) {
         const eventTimeInput = document.getElementById('eventTime');
         if (eventTimeInput) {
@@ -1707,7 +1842,7 @@ function loadStateFromUrl() {
             hasParams = true;
         }
     }
-    
+
     if (periodValue) {
         const periodValueInput = document.getElementById('periodValue');
         if (periodValueInput) {
@@ -1715,7 +1850,7 @@ function loadStateFromUrl() {
             hasParams = true;
         }
     }
-    
+
     if (periodType) {
         const periodTypeSelect = document.getElementById('periodType');
         if (periodTypeSelect) {
@@ -1723,19 +1858,19 @@ function loadStateFromUrl() {
             hasParams = true;
         }
     }
-    
+
     // Store event name for later use in modal
     if (eventName) {
         window.permalinkEventName = eventName;
         hasParams = true;
     }
-    
+
     return hasParams;
 }
 
 function copyPermalinkToClipboard() {
     const permalink = generatePermalink(true); // Include event name if available
-    
+
     if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(permalink).then(() => {
             showPermalinkFeedback(appStrings?.ui?.permalinkCopied || 'Copied!');
@@ -1757,7 +1892,7 @@ function fallbackCopyToClipboard(text) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     try {
         const successful = document.execCommand('copy');
         if (successful) {
@@ -1786,7 +1921,7 @@ function showPermalinkFeedback(message) {
     if (existingFeedback) {
         existingFeedback.remove();
     }
-    
+
     // Create feedback element
     const feedback = document.createElement('div');
     feedback.className = 'permalink-feedback';
@@ -1803,9 +1938,9 @@ function showPermalinkFeedback(message) {
         font-size: 14px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     `;
-    
+
     document.body.appendChild(feedback);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         if (feedback.parentNode) {
@@ -1816,12 +1951,12 @@ function showPermalinkFeedback(message) {
 
 // Export for Node.js while preserving browser functionality
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { 
+    module.exports = {
         calculatePeriod,
-        setHolidaySystem: function(system) {
+        setHolidaySystem: function (system) {
             selectedHolidaySystem = sanitizeHolidaySystem(system);
         },
-        getHolidaySystem: function() {
+        getHolidaySystem: function () {
             return selectedHolidaySystem;
         },
         holidayData,
@@ -1834,10 +1969,10 @@ if (typeof module !== 'undefined' && module.exports) {
     document.getElementById('periodForm').addEventListener('submit', handleSubmit);
 
     // Add event listener when the document is loaded
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Load state from URL first, then set defaults if no URL params
         const hasUrlParams = loadStateFromUrl();
-        
+
         if (!hasUrlParams) {
             // Set default date to today only if no URL params
             const eventDateInput = document.getElementById('eventDate');
@@ -1847,17 +1982,17 @@ if (typeof module !== 'undefined' && module.exports) {
             const day = String(today.getDate()).padStart(2, '0');
             eventDateInput.value = `${year}-${month}-${day}`;
         }
-        
+
         updateEventDateDisplay();
         const eventDateInput = document.getElementById('eventDate');
         eventDateInput.addEventListener('change', updateEventDateDisplay);
         eventDateInput.addEventListener('input', updateEventDateDisplay);
-        
+
         // Add event listener to period type select to toggle time input requirement
         const periodTypeSelect = document.getElementById('periodType');
         const eventTimeInput = document.getElementById('eventTime');
-        
-        periodTypeSelect.addEventListener('change', function() {
+
+        periodTypeSelect.addEventListener('change', function () {
             if (this.value === 'hours') {
                 eventTimeInput.required = true;
             } else {
@@ -1876,14 +2011,14 @@ if (typeof module !== 'undefined' && module.exports) {
         // Add event listeners for preset buttons
         const presetButtons = document.querySelectorAll('.preset-btn');
         presetButtons.forEach(button => {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function () {
                 const value = this.getAttribute('data-value');
                 const type = this.getAttribute('data-type');
                 const workingDays = this.getAttribute('data-working') === 'true';
-                
+
                 document.getElementById('periodValue').value = value;
                 document.getElementById('periodType').value = workingDays ? 'working-days' : type;
-                
+
                 updateCalculation();
             });
         });
@@ -1896,7 +2031,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
         if (dateFormatSelect) {
             dateFormatSelect.value = dateFormat;
-            dateFormatSelect.addEventListener('change', function() {
+            dateFormatSelect.addEventListener('change', function () {
                 dateFormat = this.value;
                 setCookie('dateFormat', dateFormat, 365);
                 updateEventDateDisplay();
@@ -1906,17 +2041,17 @@ if (typeof module !== 'undefined' && module.exports) {
 
         if (holidaySystemSelect) {
             holidaySystemSelect.value = selectedHolidaySystem;
-            holidaySystemSelect.addEventListener('change', function() {
+            holidaySystemSelect.addEventListener('change', function () {
                 selectedHolidaySystem = sanitizeHolidaySystem(this.value);
                 setCookie('holidaySystem', selectedHolidaySystem, 365);
                 updateCalculation();
             });
         }
-        
+
         // Add real-time validation for modal event name input
         const modalEventNameInput = document.getElementById('modalDeadlineName');
         if (modalEventNameInput) {
-            modalEventNameInput.addEventListener('input', function() {
+            modalEventNameInput.addEventListener('input', function () {
                 const validation = validateEventName(this.value);
                 if (!validation.valid && this.value.length > 0) {
                     // Show validation error for non-empty invalid input
@@ -1926,8 +2061,8 @@ if (typeof module !== 'undefined' && module.exports) {
                     clearValidationError(this);
                 }
             });
-            
-            modalEventNameInput.addEventListener('paste', function(e) {
+
+            modalEventNameInput.addEventListener('paste', function (e) {
                 // Validate pasted content after a short delay
                 setTimeout(() => {
                     const validation = validateEventName(this.value);
@@ -1941,19 +2076,19 @@ if (typeof module !== 'undefined' && module.exports) {
                 }, 10);
             });
         }
-        
+
         // If we loaded from URL and have an event name, populate the modal input
         if (window.permalinkEventName) {
             // We'll set this when the modal opens
         }
 
         if (settingsBtn && settingsPanel) {
-            settingsBtn.addEventListener('click', function(e) {
+            settingsBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 settingsPanel.classList.toggle('show');
             });
 
-            document.addEventListener('click', function(e) {
+            document.addEventListener('click', function (e) {
                 if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
                     settingsPanel.classList.remove('show');
                 }
@@ -1962,7 +2097,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
         // Populate footer and other UI elements from strings
         populateUIFromStrings();
-        
+
         // Initial calculation
         updateCalculation();
     });
@@ -1970,51 +2105,67 @@ if (typeof module !== 'undefined' && module.exports) {
     // Function to populate UI elements from strings
     function populateUIFromStrings() {
         if (!appStrings) return;
-        
+
         // Populate footer
         const footer = document.getElementById('footer-content');
         if (footer && appStrings.footer) {
             const disclaimerDiv = document.createElement('div');
             disclaimerDiv.style.cssText = 'background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ffeeba;';
-            
+
             const disclaimerTitle = document.createElement('p');
             disclaimerTitle.style.cssText = 'margin: 0; font-weight: 500;';
             disclaimerTitle.textContent = appStrings.footer.disclaimer;
             disclaimerDiv.appendChild(disclaimerTitle);
-            
+
             const disclaimerText = document.createElement('p');
             disclaimerText.style.cssText = 'margin: 8px 0 0 0;';
             disclaimerText.textContent = appStrings.footer.disclaimerText;
             disclaimerDiv.appendChild(disclaimerText);
-            
+
             footer.appendChild(disclaimerDiv);
-            
+
             // Regulation description
             const regulationP = document.createElement('p');
-            
+
             const regulationLink = '<a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank" rel="noopener">' + appStrings.footer.regulationTitle + '</a>';
             regulationP.innerHTML = interpolateString(appStrings.footer.regulationDescription, { regulationLink });
             footer.appendChild(regulationP);
-            
+
             // Regulation title
             const regulationTitle = document.createElement('p');
             regulationTitle.textContent = appStrings.footer.regulationTitle;
             // footer.appendChild(regulationTitle);
-            
+
             // Holiday data sources
             const sourcesTitle = document.createElement('p');
             sourcesTitle.innerHTML = `<strong>${appStrings.footer.holidayDataSources}</strong>`;
             footer.appendChild(sourcesTitle);
-            
+
             const sourcesList = document.createElement('ul');
             sourcesList.style.cssText = 'text-align: left; max-width: 600px; margin: 10px auto;';
-            
+
             // Member states source
             const memberStatesLi = document.createElement('li');
             const memberStatesLink = '<a href="https://eur-lex.europa.eu/eli/C/2024/7517/oj/eng" target="_blank" rel="noopener">OJ C, C/2024/7517, 20.12.2024, ELI: http://data.europa.eu/eli/C/2024/7517/oj</a>';
             memberStatesLi.innerHTML = interpolateString(appStrings.footer.memberStatesSource, { sourceLink: memberStatesLink });
             sourcesList.appendChild(memberStatesLi);
-            
+
+            const memberStates2026Li = document.createElement('li');
+            const memberStates2026LinkEl = document.createElement('a');
+            memberStates2026LinkEl.href = "http://data.europa.eu/eli/C/2025/6771/oj";
+            memberStates2026LinkEl.target = "_blank";
+            memberStates2026LinkEl.rel = "noopener";
+            memberStates2026LinkEl.textContent = "Public holidays 2026, PUB/2025/1503, OJ C, C/2025/6771, 22.12.2025, ELI: http://data.europa.eu/eli/C/2025/6771/oj (BG, ES, CS, DA, DE, ET, EL, EN, FR, GA, HR, IT, LV, LT, HU, MT, NL, PL, PT, RO, SK, SL, FI, SV)";
+
+            const memberStates2026Template = appStrings.footer.memberStates2026Source || '{sourceLink}';
+            const memberStates2026TextParts = memberStates2026Template.split('{sourceLink}');
+            memberStates2026Li.append(memberStates2026TextParts[0]);
+            memberStates2026Li.append(memberStates2026LinkEl);
+            if (memberStates2026TextParts[1]) {
+                memberStates2026Li.append(memberStates2026TextParts[1]);
+            }
+            sourcesList.appendChild(memberStates2026Li);
+
             // EP source
             const epLi = document.createElement('li');
             const epLink = '<a href="https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2025_en.pdf" target="_blank" rel="noopener">European Parliament Official Notice: Public holidays and office closing days during 2025, Luxembourg, 25 July 2024 (accessed 06.06.2025)</a>';
@@ -2027,7 +2178,7 @@ if (typeof module !== 'undefined' && module.exports) {
             ep2026LinkEl.target = "_blank";
             ep2026LinkEl.rel = "noopener";
             ep2026LinkEl.textContent = "European Parliament Official Notice: Public holidays and office closing days during 2026, Luxembourg, 10 October 2025 (accessed 20.12.2025)";
-            
+
             const textParts = appStrings.footer.ep2026Source.split('{sourceLink}');
             ep2026Li.append(textParts[0]);
             ep2026Li.append(ep2026LinkEl);
@@ -2035,7 +2186,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 ep2026Li.append(textParts[1]);
             }
             sourcesList.appendChild(ep2026Li);
-            
+
             // EC source
             const ecLi = document.createElement('li');
             const ecLink = '<a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219" target="_blank" rel="noopener">OJ C, C/2024/2219, 22.3.2024, ELI: http://data.europa.eu/eli/C/2024/2219/oj</a>';
@@ -2047,27 +2198,27 @@ if (typeof module !== 'undefined' && module.exports) {
             const ec2026Link = '<a href="https://eur-lex.europa.eu/eli/C/2025/4103/oj" target="_blank" rel="noopener">OJ C, C/2025/4103, 24.7.2025, ELI: http://data.europa.eu/eli/C/2025/4103/oj</a>';
             ec2026Li.innerHTML = interpolateString(appStrings.footer.ec2026Source, { sourceLink: ec2026Link });
             sourcesList.appendChild(ec2026Li);
-            
+
             footer.appendChild(sourcesList);
-            
+
             // GitHub link
             const githubP = document.createElement('p');
             githubP.innerHTML = '<a href="https://github.com/bdamokos/eu-time-limit-calculator" target="_blank" rel="noopener">' + appStrings.footer.githubLink + '</a>';
             footer.appendChild(githubP);
         }
-        
+
         // Update UI placeholders and labels
         const eventTimeHelp = document.querySelector('small');
         if (eventTimeHelp && appStrings.ui?.eventTimeRequired) {
             eventTimeHelp.textContent = appStrings.ui.eventTimeRequired;
         }
-        
+
         // Update modal placeholders if modal exists
         const modalEventNameInput = document.getElementById('modalDeadlineName');
         if (modalEventNameInput && appStrings.ui?.eventNamePlaceholder) {
             modalEventNameInput.placeholder = appStrings.ui.eventNamePlaceholder;
         }
-        
+
         const modalEventNameHelp = modalEventNameInput?.parentNode?.querySelector('small');
         if (modalEventNameHelp && appStrings.ui?.eventNameDescription) {
             modalEventNameHelp.textContent = appStrings.ui.eventNameDescription;
@@ -2080,17 +2231,17 @@ if (typeof module !== 'undefined' && module.exports) {
         const eventTime = document.getElementById('eventTime').value;
         const periodValue = parseInt(document.getElementById('periodValue').value);
         const periodType = document.getElementById('periodType').value;
-        
+
         // Validate inputs
         if (!eventDate || !periodValue || isNaN(periodValue)) {
             return;
         }
-        
+
         // Validate time input for hour-based calculations
         if (periodType === 'hours' && !eventTime) {
             return;
         }
-        
+
         // Create event date/time
         const eventDateTime = new Date(eventDate);
         if (eventTime) {
@@ -2100,12 +2251,12 @@ if (typeof module !== 'undefined' && module.exports) {
             // If no time provided, set to start of day
             eventDateTime.setHours(0, 0, 0, 0);
         }
-        
+
         const result = calculatePeriod(eventDateTime, periodValue, periodType);
         const resultContainer = document.getElementById('result');
         resultContainer.replaceChildren(); // Clear previous content safely
         resultContainer.appendChild(createResultElement(result));
-        
+
         // Update URL to reflect current calculation
         updateUrlFromForm();
     }
