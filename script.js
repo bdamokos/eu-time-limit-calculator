@@ -417,8 +417,8 @@ function isHoliday(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
 
-    const holidays = getHolidaySet(selectedHolidaySystem);
-    return holidays.has(dateString);
+    const holidaySet = getHolidaySet(selectedHolidaySystem);
+    return holidaySet.has(dateString);
 }
 
 /**
