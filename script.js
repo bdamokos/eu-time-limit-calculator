@@ -331,13 +331,13 @@ function getHolidaySet(holidaySystem) {
 }
 
 // Default holiday system and date format
-let selectedHolidaySystem = 'EP';
+let selectedHolidaySystem = DEFAULT_HOLIDAY_SYSTEM;
 let dateFormat = 'dmy-text';
 
 // Sanitize holiday system value to prevent injection via URL parameters or cookies
 function sanitizeHolidaySystem(value) {
     const allowed = Object.keys(holidayData);
-    return allowed.includes(value) ? value : 'EP';
+    return allowed.includes(value) ? value : DEFAULT_HOLIDAY_SYSTEM;
 }
 
 // Sanitize date format from allowed list
@@ -1219,7 +1219,7 @@ function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
     const missingYears = [];
 
     for (let year = startYear; year <= endYear; year++) {
-        if (holidaySystem === 'EP') {
+        if (holidaySystem === DEFAULT_HOLIDAY_SYSTEM) {
             const holidays = holidayData[holidaySystem] || [];
             const yearHolidays = holidays.filter(dateStr => dateStr.startsWith(`${year}-`));
 
