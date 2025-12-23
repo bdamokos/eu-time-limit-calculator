@@ -320,6 +320,11 @@ const holidaySets = Object.keys(holidayData).reduce((sets, key) => {
 
 const defaultHolidaySet = holidaySets['EP'];
 
+/**
+ * Selects the holiday date set for a given holiday system key.
+ * @param {string} holidaySystem - Holiday system key (e.g., 'EP' or an ISO country code).
+ * @returns {Set<string>} A Set of date strings in `YYYY-MM-DD` format for the requested holiday system; returns the default EP set if the key is not found.
+ */
 function getHolidaySet(holidaySystem) {
     return holidaySets[holidaySystem] || defaultHolidaySet;
 }
@@ -394,6 +399,11 @@ if (typeof document !== 'undefined') {
     }
 }
 
+/**
+ * Determine whether a given Date falls on a configured holiday.
+ * @param {Date} date - The date to check; invalid Date objects are treated as not holidays.
+ * @returns {boolean} `true` if the date is listed as a holiday for the currently selected holiday system, `false` otherwise.
+ */
 function isHoliday(date) {
     // Check if the date is valid before trying to convert it
     if (isNaN(date.getTime())) {
@@ -410,6 +420,11 @@ function isHoliday(date) {
     return holidays.has(dateString);
 }
 
+/**
+ * Determine whether a given date falls on a weekend.
+ * @param {Date} date - The date to check.
+ * @returns {boolean} `true` if the date is Saturday or Sunday, `false` otherwise.
+ */
 function isWeekend(date) {
     const day = date.getDay();
     return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
