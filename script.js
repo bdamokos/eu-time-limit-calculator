@@ -313,6 +313,17 @@ const holidayData = {
     ]
 };
 
+const holidaySets = Object.keys(holidayData).reduce((sets, key) => {
+    sets[key] = new Set(holidayData[key]);
+    return sets;
+}, {});
+
+const defaultHolidaySet = holidaySets['EP'];
+
+function getHolidaySet(holidaySystem) {
+    return holidaySets[holidaySystem] || defaultHolidaySet;
+}
+
 // Default holiday system and date format
 let selectedHolidaySystem = 'EP';
 let dateFormat = 'dmy-text';
@@ -395,8 +406,8 @@ function isHoliday(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
 
-    const holidays = holidayData[selectedHolidaySystem] || holidayData['EP'];
-    return holidays.includes(dateString);
+    const holidays = getHolidaySet(selectedHolidaySystem);
+    return holidays.has(dateString);
 }
 
 function isWeekend(date) {
