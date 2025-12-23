@@ -313,12 +313,13 @@ const holidayData = {
     ]
 };
 
-const holidaySets = Object.keys(holidayData).reduce((sets, key) => {
-    sets[key] = new Set(holidayData[key]);
-    return sets;
-}, {});
+const DEFAULT_HOLIDAY_SYSTEM = 'EP';
 
-const defaultHolidaySet = holidaySets['EP'];
+const holidaySets = Object.fromEntries(
+    Object.entries(holidayData).map(([key, holidays]) => [key, new Set(holidays)])
+);
+
+const defaultHolidaySet = holidaySets[DEFAULT_HOLIDAY_SYSTEM];
 
 /**
  * Selects the holiday date set for a given holiday system key.
