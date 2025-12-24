@@ -29,12 +29,13 @@ const holidayDataFiles = {};
 const availableYearsCache = {};
 const holidayDataSetsBySystem = {};
 const holidaySets = {};
+const holidayLoadErrors = {};
 
 function isNodeEnvironment() {
     return typeof module !== 'undefined' && module.exports;
 }
 
-function loadHolidayDataFile(holidaySystem) {
+async function loadHolidayDataFile(holidaySystem) {
     if (!AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem)) {
         return {};
     }
@@ -47,23 +48,21 @@ function loadHolidayDataFile(holidaySystem) {
 
     try {
         if (isNodeEnvironment()) {
-            const fs = require('fs');
+            const fs = require('fs').promises;
             const path = require('path');
             const filePath = path.join(__dirname, HOLIDAY_DATA_DIRECTORY, `${holidaySystem}.json`);
-            data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        } else if (typeof XMLHttpRequest !== 'undefined') {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', `${HOLIDAY_DATA_DIRECTORY}/${holidaySystem}.json`, false);
-            xhr.send(null);
-
-            if (xhr.status >= 200 && xhr.status < 300) {
-                data = JSON.parse(xhr.responseText);
-            } else {
-                console.warn(`Failed to load holiday data for ${holidaySystem}: ${xhr.status}`);
+            const fileContents = await fs.readFile(filePath, 'utf8');
+            data = JSON.parse(fileContents);
+        } else if (typeof fetch !== 'undefined') {
+            const response = await fetch(`${HOLIDAY_DATA_DIRECTORY}/${holidaySystem}.json`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+            data = await response.json();
         }
     } catch (error) {
         console.warn(`Error loading holiday data for ${holidaySystem}:`, error);
+        holidayLoadErrors[holidaySystem] = true;
     }
 
     holidayDataFiles[holidaySystem] = data || {};
@@ -75,7 +74,7 @@ function loadHolidayDataFile(holidaySystem) {
     return holidayDataFiles[holidaySystem];
 }
 
-function ensureHolidayYearLoaded(holidaySystem, year) {
+async function ensureHolidayYearLoaded(holidaySystem, year) {
     if (!AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) || !year) {
         return;
     }
@@ -88,7 +87,7 @@ function ensureHolidayYearLoaded(holidaySystem, year) {
         return;
     }
 
-    const data = loadHolidayDataFile(holidaySystem);
+    const data = await loadHolidayDataFile(holidaySystem);
     const yearDates = data[String(year)];
 
     if (Array.isArray(yearDates)) {
@@ -99,25 +98,32 @@ function ensureHolidayYearLoaded(holidaySystem, year) {
         }
 
         yearDates.forEach(dateStr => holidaySets[holidaySystem].add(dateStr));
+    } else {
+        holidayDataSetsBySystem[holidaySystem][year] = new Set();
     }
 }
 
-function getHolidayDatesForYear(holidaySystem, year) {
-    const data = loadHolidayDataFile(holidaySystem);
+async function ensureHolidayYearsLoaded(holidaySystem, years) {
+    await Promise.all(years.map(year => ensureHolidayYearLoaded(holidaySystem, year)));
+}
+
+async function getHolidayDatesForYear(holidaySystem, year) {
+    const data = await loadHolidayDataFile(holidaySystem);
     const yearDates = data[String(year)];
     return Array.isArray(yearDates) ? yearDates : [];
 }
 
-function getDefaultHolidaySet() {
-    ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
+async function getDefaultHolidaySet() {
+    await ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
     return holidaySets[DEFAULT_HOLIDAY_SYSTEM] || new Set();
 }
 
 const holidayData = new Proxy({}, {
     get(_target, system) {
         if (typeof system !== 'string') return undefined;
-        const data = loadHolidayDataFile(system);
-        return Object.values(data || {}).flat();
+        const cached = holidayDataFiles[system];
+        if (!cached) return [];
+        return Object.values(cached || {}).flat();
     },
     ownKeys() {
         return AVAILABLE_HOLIDAY_SYSTEMS;
@@ -127,12 +133,44 @@ const holidayData = new Proxy({}, {
     }
 });
 
-function getHolidaySet(holidaySystem) {
+async function getHolidaySet(holidaySystem) {
     const targetSystem = AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) ? holidaySystem : DEFAULT_HOLIDAY_SYSTEM;
     if (!holidaySets[targetSystem]) {
-        ensureHolidayYearLoaded(targetSystem, CURRENT_YEAR);
+        await ensureHolidayYearLoaded(targetSystem, CURRENT_YEAR);
     }
-    return holidaySets[targetSystem] || getDefaultHolidaySet();
+    if (!holidaySets[targetSystem]) {
+        holidaySets[targetSystem] = new Set();
+    }
+    return holidaySets[targetSystem];
+}
+
+function getHolidaySetSync(holidaySystem) {
+    const targetSystem = AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) ? holidaySystem : DEFAULT_HOLIDAY_SYSTEM;
+    return holidaySets[targetSystem] || new Set();
+}
+
+function isHolidaySync(date, holidaySystem = selectedHolidaySystem) {
+    if (isNaN(date.getTime())) return false;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    const set = getHolidaySetSync(holidaySystem);
+    return set.has(dateString);
+}
+
+function isWorkingDaySync(date) {
+    return !isWeekend(date) && !isHolidaySync(date);
+}
+
+function getYearsInRange(startDate, endDate) {
+    const years = [];
+    const startYear = startDate.getFullYear();
+    const endYear = endDate.getFullYear();
+    for (let y = startYear; y <= endYear; y++) {
+        years.push(y);
+    }
+    return years;
 }
 
 ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
@@ -213,7 +251,7 @@ ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
  * @param {Date} date - The date to check; invalid Date objects are treated as not holidays.
  * @returns {boolean} `true` if the date is listed as a holiday for the currently selected holiday system, `false` otherwise.
  */
-function isHoliday(date) {
+async function isHoliday(date) {
     // Check if the date is valid before trying to convert it
     if (isNaN(date.getTime())) {
         return false; // Invalid date is not a holiday
@@ -225,12 +263,8 @@ function isHoliday(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
 
-    ensureHolidayYearLoaded(selectedHolidaySystem, year);
-    if (selectedHolidaySystem !== DEFAULT_HOLIDAY_SYSTEM) {
-        ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, year);
-    }
-
-    const holidaySet = getHolidaySet(selectedHolidaySystem);
+    await ensureHolidayYearLoaded(selectedHolidaySystem, year);
+    const holidaySet = await getHolidaySet(selectedHolidaySystem);
     return holidaySet.has(dateString);
 }
 
@@ -244,14 +278,15 @@ function isWeekend(date) {
     return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
 }
 
-function isWorkingDay(date) {
-    return !isWeekend(date) && !isHoliday(date);
+async function isWorkingDay(date) {
+    if (isWeekend(date)) return false;
+    return !(await isHoliday(date));
 }
 
-function findNextWorkingDay(date) {
+async function findNextWorkingDay(date) {
     let nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
-    while (!isWorkingDay(nextDay)) {
+    while (!(await isWorkingDay(nextDay))) {
         nextDay.setDate(nextDay.getDate() + 1);
     }
     return nextDay;
@@ -301,7 +336,7 @@ function updateEventDateDisplay() {
 }
 
 // Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
-function calculatePeriod(eventDateTime, periodValue, periodType) {
+async function calculatePeriod(eventDateTime, periodValue, periodType) {
     const result = {
         eventDate: new Date(eventDateTime),
         startDate: null,
@@ -315,6 +350,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
     const isRetroactive = periodValue < 0;
     const absolutePeriodValue = Math.abs(periodValue);
+
+    // Ensure current year data for the selected system is available before calculations
+    await ensureHolidayYearLoaded(selectedHolidaySystem, result.eventDate.getFullYear());
 
     // Step 1: Apply Article 3(1) - Skip the event hour/day (except for weeks, months, years per Case C-171/03)
     let startDate = new Date(eventDateTime);
@@ -388,7 +426,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
         if (isRetroactive) {
             while (remainingDays > 0) {
                 currentDate.setDate(currentDate.getDate() - 1);
-                if (isWorkingDay(currentDate)) {
+                if (await isWorkingDay(currentDate)) {
                     remainingDays--;
                 }
             }
@@ -396,7 +434,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
             endDate.setHours(0, 0, 0, 0);
         } else {
             while (remainingDays > 0) {
-                if (isWorkingDay(currentDate)) {
+                if (await isWorkingDay(currentDate)) {
                     remainingDays--;
                 }
                 if (remainingDays > 0) {
@@ -514,8 +552,8 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     result.initialEndDate = new Date(endDate);
 
     // Step 3: Apply Article 3(4) - Extend to next working day if needed
-    if (periodType !== 'hours' && !isRetroactive && !isWorkingDay(endDate)) {
-        const nextWorkDay = findNextWorkingDay(endDate);
+    if (periodType !== 'hours' && !isRetroactive && !(await isWorkingDay(endDate))) {
+        const nextWorkDay = await findNextWorkingDay(endDate);
         nextWorkDay.setHours(23, 59, 59, 999);
         endDate = nextWorkDay;
         const article34Rule = appStrings?.appliedRules?.article34Extension || 'Article 3(4) applied';
@@ -543,7 +581,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
 
         // First, count working days in the original period
         while (currentDate <= endDateCopy) {
-            if (isWorkingDay(currentDate)) {
+            if (await isWorkingDay(currentDate)) {
                 workingDays++;
                 console.log(`Found working day: ${formatDate(currentDate)}`);
             }
@@ -560,7 +598,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 prevWorkDay.setHours(0, 0, 0, 0);
 
                 // Find the previous working day
-                while (!isWorkingDay(prevWorkDay)) {
+                while (!(await isWorkingDay(prevWorkDay))) {
                     prevWorkDay.setDate(prevWorkDay.getDate() - 1);
                 }
 
@@ -570,7 +608,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 workingDays = 0;
 
                 while (currentDate <= endDateCopy) {
-                    if (isWorkingDay(currentDate)) {
+                    if (await isWorkingDay(currentDate)) {
                         workingDays++;
                         console.log(`Found working day in backward extended period: ${formatDate(currentDate)}`);
                     }
@@ -601,7 +639,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 }
             } else {
                 // For forward periods, extend forward to include at least two working days total
-                let nextWorkDay = findNextWorkingDay(endDateCopy);
+                let nextWorkDay = await findNextWorkingDay(endDateCopy);
                 nextWorkDay.setHours(23, 59, 59, 999);
 
                 // We already found one working day, so we need to find at least one more
@@ -611,7 +649,7 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
                 let currentWorkDay = new Date(nextWorkDay);
 
                 while (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
-                    if (isWorkingDay(currentWorkDay)) {
+                    if (await isWorkingDay(currentWorkDay)) {
                         foundAdditionalWorkingDays++;
                         console.log(`Found additional working day: ${formatDate(currentWorkDay)}`);
                     }
@@ -651,7 +689,9 @@ function calculatePeriod(eventDateTime, periodValue, periodType) {
     const periodStart = new Date(Math.min(result.startDate, result.finalEndDate));
     const periodEnd = new Date(Math.max(result.startDate, result.finalEndDate));
 
-    const coverage = checkHolidayDataCoverage(periodStart, periodEnd, selectedHolidaySystem);
+    await ensureHolidayYearsLoaded(selectedHolidaySystem, getYearsInRange(periodStart, periodEnd));
+
+    const coverage = await checkHolidayDataCoverage(periodStart, periodEnd, selectedHolidaySystem);
     if (!coverage.isComplete) {
         result.holidayDataWarning = generateHolidayWarning(coverage, selectedHolidaySystem);
     }
@@ -794,10 +834,10 @@ function renderMonthCalendar(date, result, container) {
                 if (isWeekend(currentDate)) {
                     dayElement.classList.add('weekend');
                 }
-                if (isHoliday(currentDate)) {
+                if (isHolidaySync(currentDate)) {
                     dayElement.classList.add('holiday');
                 }
-                if (isWorkingDay(currentDate)) {
+                if (isWorkingDaySync(currentDate)) {
                     dayElement.classList.add('working-day');
                 }
 
@@ -1011,14 +1051,14 @@ function createResultElement(result) {
 }
 
 // Function to get the years covered by holiday data for a given system
-function getHolidayDataYears(holidaySystem) {
-    loadHolidayDataFile(holidaySystem);
+async function getHolidayDataYears(holidaySystem) {
+    await loadHolidayDataFile(holidaySystem);
     return availableYearsCache[holidaySystem] || [];
 }
 
 // Function to check if we have complete holiday data for a date range
-function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
-    const availableYears = getHolidayDataYears(holidaySystem);
+async function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
+    const availableYears = await getHolidayDataYears(holidaySystem);
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
 
@@ -1026,7 +1066,7 @@ function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
 
     for (let year = startYear; year <= endYear; year++) {
         if (holidaySystem === DEFAULT_HOLIDAY_SYSTEM) {
-            const yearHolidays = getHolidayDatesForYear(holidaySystem, year);
+            const yearHolidays = await getHolidayDatesForYear(holidaySystem, year);
 
             if (yearHolidays.length === 0) {
                 // No data at all for this year
@@ -1569,7 +1609,7 @@ if (typeof document !== 'undefined') {
 }
 
 // Function to handle form submission
-function handleSubmit(event) {
+async function handleSubmit(event) {
     event.preventDefault();
 
     const eventDate = document.getElementById('eventDate').value;
@@ -1593,7 +1633,7 @@ function handleSubmit(event) {
         eventDateTime.setHours(0, 0, 0, 0);
     }
 
-    const result = calculatePeriod(eventDateTime, periodValue, periodType);
+    const result = await calculatePeriod(eventDateTime, periodValue, periodType);
     const resultContainer = document.getElementById('result');
     resultContainer.replaceChildren(); // Clear previous content safely
     resultContainer.appendChild(createResultElement(result));
@@ -1785,9 +1825,9 @@ function showPermalinkFeedback(message) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         calculatePeriod,
-        setHolidaySystem: function (system) {
+        setHolidaySystem: async function (system) {
             selectedHolidaySystem = sanitizeHolidaySystem(system);
-            ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
+            await ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
             return selectedHolidaySystem;
         },
         getHolidaySystem: function () {
@@ -1833,14 +1873,14 @@ if (typeof module !== 'undefined' && module.exports) {
             } else {
                 eventTimeInput.required = false;
             }
-            updateCalculation();
+            updateCalculation().catch(console.error);
         });
 
         // Add event listeners for all input changes
         const formInputs = document.querySelectorAll('#periodForm input, #periodForm select');
         formInputs.forEach(input => {
-            input.addEventListener('change', updateCalculation);
-            input.addEventListener('input', updateCalculation);
+            input.addEventListener('change', () => updateCalculation().catch(console.error));
+            input.addEventListener('input', () => updateCalculation().catch(console.error));
         });
 
         // Add event listeners for preset buttons
@@ -1854,7 +1894,7 @@ if (typeof module !== 'undefined' && module.exports) {
                 document.getElementById('periodValue').value = value;
                 document.getElementById('periodType').value = workingDays ? 'working-days' : type;
 
-                updateCalculation();
+                updateCalculation().catch(console.error);
             });
         });
 
@@ -1870,17 +1910,17 @@ if (typeof module !== 'undefined' && module.exports) {
                 dateFormat = this.value;
                 setCookie('dateFormat', dateFormat, 365);
                 updateEventDateDisplay();
-                updateCalculation();
+                updateCalculation().catch(console.error);
             });
         }
 
         if (holidaySystemSelect) {
             holidaySystemSelect.value = selectedHolidaySystem;
-            holidaySystemSelect.addEventListener('change', function () {
+            holidaySystemSelect.addEventListener('change', async function () {
                 selectedHolidaySystem = sanitizeHolidaySystem(this.value);
-                ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
+                await ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
                 setCookie('holidaySystem', selectedHolidaySystem, 365);
-                updateCalculation();
+                updateCalculation().catch(console.error);
             });
         }
 
@@ -1935,7 +1975,7 @@ if (typeof module !== 'undefined' && module.exports) {
         populateUIFromStrings();
 
         // Initial calculation
-        updateCalculation();
+        updateCalculation().catch(console.error);
     });
 
     // Function to populate UI elements from strings
@@ -2062,7 +2102,7 @@ if (typeof module !== 'undefined' && module.exports) {
     }
 
     // Function to update the calculation
-    function updateCalculation() {
+    async function updateCalculation() {
         const eventDate = document.getElementById('eventDate').value;
         const eventTime = document.getElementById('eventTime').value;
         const periodValue = parseInt(document.getElementById('periodValue').value);
@@ -2088,7 +2128,7 @@ if (typeof module !== 'undefined' && module.exports) {
             eventDateTime.setHours(0, 0, 0, 0);
         }
 
-        const result = calculatePeriod(eventDateTime, periodValue, periodType);
+        const result = await calculatePeriod(eventDateTime, periodValue, periodType);
         const resultContainer = document.getElementById('result');
         resultContainer.replaceChildren(); // Clear previous content safely
         resultContainer.appendChild(createResultElement(result));
