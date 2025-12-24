@@ -17,318 +17,125 @@ if (typeof module !== 'undefined' && module.exports) {
     });
 }
 
-// Holiday data organized by country/institution
-const holidayData = {
-    // EU Member States holidays for 2025-2026 based on OJ C, C/2024/7517, 20.12.2024 and OJ C, C/2025/6771, 22.12.2025
-    'BE': [
-        // 2025
-        '2025-01-01', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-08', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25',
-        // 2026
-        '2026-01-01', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-07-21', '2026-11-02', '2026-11-11', '2026-12-25'
-    ],
-    'BG': [
-        // 2025
-        '2025-01-01', '2025-03-03', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-06', '2025-05-24', '2025-09-06', '2025-09-22', '2025-11-01', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-03-03', '2026-04-10', '2026-04-11', '2026-04-12', '2026-04-13', '2026-05-01', '2026-05-06', '2026-05-24', '2026-09-06', '2026-09-22', '2026-11-01', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'CZ': [
-        // 2025
-        '2025-01-01', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-07-06', '2025-09-28', '2025-10-28', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-08', '2026-07-05', '2026-07-06', '2026-09-28', '2026-10-28', '2026-11-17', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'DK': [
-        // 2025
-        '2025-01-01', '2025-04-17', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-29', '2025-06-08', '2025-06-09', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-02', '2026-04-03', '2026-04-05', '2026-04-06', '2026-05-14', '2026-05-24', '2026-05-25', '2026-12-25', '2026-12-26'
-    ],
-    'DE': [
-        // 2025
-        '2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-10-03', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-10-03', '2026-12-25', '2026-12-26'
-    ],
-    'EE': [
-        // 2025
-        '2025-01-01', '2025-02-24', '2025-04-18', '2025-04-20', '2025-05-01', '2025-06-08', '2025-06-23', '2025-06-24', '2025-08-20', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-02-24', '2026-04-03', '2026-04-05', '2026-05-01', '2026-05-24', '2026-06-23', '2026-06-24', '2026-08-20', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'IE': [
-        // 2025
-        '2025-01-01', '2025-02-03', '2025-03-17', '2025-04-21', '2025-05-05', '2025-06-02', '2025-08-04', '2025-10-27', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-02-02', '2026-03-17', '2026-04-06', '2026-05-04', '2026-06-01', '2026-08-03', '2026-10-26', '2026-12-25', '2026-12-26'
-    ],
-    'EL': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-18', '2025-04-19', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-10-28', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-02-23', '2026-03-25', '2026-04-10', '2026-04-13', '2026-05-01', '2026-05-31', '2026-06-01', '2026-08-15', '2026-10-28', '2026-12-25', '2026-12-26'
-    ],
-    'ES': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-18', '2025-05-01', '2025-08-15', '2025-11-01', '2025-12-06', '2025-12-08', '2025-12-25',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-03', '2026-05-01', '2026-08-15', '2026-10-12', '2026-12-08', '2026-12-25'
-    ],
-    'FR': [
-        // 2025
-        '2025-01-01', '2025-04-21', '2025-05-01', '2025-05-08', '2025-05-29', '2025-06-09', '2025-07-14', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25',
-        // 2026
-        '2026-01-01', '2026-04-06', '2026-05-01', '2026-05-08', '2026-05-14', '2026-05-25', '2026-07-14', '2026-08-15', '2026-11-01', '2026-11-11', '2026-12-25'
-    ],
-    'HR': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-30', '2025-06-19', '2025-06-22', '2025-08-05', '2025-08-15', '2025-11-01', '2025-11-18', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-30', '2026-06-04', '2026-06-22', '2026-08-05', '2026-08-15', '2026-11-01', '2026-11-18', '2026-12-25', '2026-12-26'
-    ],
-    'IT': [
-        // 2025
-        '2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-07-21', '2026-08-15', '2026-10-04', '2026-11-01', '2026-12-25', '2026-12-26'
-    ],
-    'CY': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-03-03', '2025-03-25', '2025-04-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-15', '2025-10-01', '2025-10-28', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-02', '2026-04-03', '2026-04-06', '2026-04-10', '2026-04-13', '2026-05-01', '2026-05-14', '2026-05-15', '2026-05-25', '2026-10-01', '2026-11-02', '2026-12-24', '2026-12-25'
-    ],
-    'LV': [
-        // 2025
-        '2025-01-01', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-05', '2025-06-23', '2025-06-24', '2025-11-18', '2025-12-24', '2025-12-25', '2025-12-26', '2025-12-31',
-        // 2026
-        '2026-01-01', '2026-01-02', '2026-04-03', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-04', '2026-06-22', '2026-06-23', '2026-06-24', '2026-11-18', '2026-12-24', '2026-12-25', '2026-12-26', '2026-12-31'
-    ],
-    'LT': [
-        // 2025
-        '2025-01-01', '2025-02-16', '2025-03-11', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-04', '2025-06-01', '2025-06-24', '2025-07-06', '2025-08-15', '2025-11-01', '2025-11-02', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-02-16', '2026-03-11', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-03', '2026-06-07', '2026-06-24', '2026-07-06', '2026-08-15', '2026-11-01', '2026-11-02', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'LU': [
-        // 2025
-        '2025-01-01', '2025-04-21', '2025-05-01', '2025-05-09', '2025-05-29', '2025-06-09', '2025-06-23', '2025-08-15', '2025-11-01', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-06', '2026-05-01', '2026-05-09', '2026-05-14', '2026-05-25', '2026-06-23', '2026-08-15', '2026-11-01', '2026-12-25', '2026-12-26'
-    ],
-    'HU': [
-        // 2025
-        '2025-01-01', '2025-03-15', '2025-04-18', '2025-04-21', '2025-05-01', '2025-06-09', '2025-08-20', '2025-10-23', '2025-11-01', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-03-15', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-25', '2026-08-20', '2026-10-23', '2026-11-01', '2026-12-25', '2026-12-26'
-    ],
-    'MT': [
-        // 2025
-        '2025-01-01', '2025-02-10', '2025-03-19', '2025-03-31', '2025-04-18', '2025-05-01', '2025-06-07', '2025-06-29', '2025-08-15', '2025-09-08', '2025-09-21', '2025-12-08', '2025-12-13', '2025-12-25',
-        // 2026
-        '2026-01-01', '2026-02-10', '2026-03-19', '2026-03-31', '2026-04-03', '2026-05-01', '2026-06-07', '2026-06-29', '2026-08-15', '2026-09-08', '2026-09-21', '2026-12-08', '2026-12-13', '2026-12-25'
-    ],
-    'NL': [
-        // 2025
-        '2025-01-01', '2025-04-18', '2025-04-21', '2025-04-26', '2025-05-05', '2025-05-29', '2025-05-30', '2025-06-09', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-03', '2026-04-05', '2026-04-06', '2026-04-27', '2026-05-05', '2026-05-14', '2026-05-24', '2026-05-25', '2026-12-25', '2026-12-26'
-    ],
-    'AT': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-06-19', '2025-08-15', '2025-10-26', '2025-11-01', '2025-12-08', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-06-04', '2026-08-15', '2026-10-26', '2026-11-01', '2026-12-08', '2026-12-25', '2026-12-26'
-    ],
-    'PL': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-03', '2025-06-08', '2025-06-19', '2025-08-15', '2025-11-01', '2025-11-11', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-20', '2026-04-21', '2026-05-01', '2026-05-03', '2026-06-19', '2026-08-15', '2026-11-01', '2026-11-11', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'PT': [
-        // 2025
-        '2025-01-01', '2025-04-18', '2025-04-20', '2025-04-25', '2025-05-01', '2025-06-10', '2025-06-19', '2025-08-15', '2025-10-05', '2025-11-01', '2025-12-01', '2025-12-08', '2025-12-25',
-        // 2026
-        '2026-01-01', '2026-04-03', '2026-04-05', '2026-04-25', '2026-05-01', '2026-06-04', '2026-06-10', '2026-08-15', '2026-10-05', '2026-11-01', '2026-12-01', '2026-12-08', '2026-12-25'
-    ],
-    'RO': [
-        // 2025
-        '2025-01-01', '2025-01-02', '2025-01-06', '2025-01-07', '2025-01-24', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-06-01', '2025-06-08', '2025-06-09', '2025-08-15', '2025-11-30', '2025-12-01', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-02', '2026-01-06', '2026-01-07', '2026-01-24', '2026-04-10', '2026-04-12', '2026-04-13', '2026-05-01', '2026-05-31', '2026-06-01', '2026-08-15', '2026-11-30', '2026-12-01', '2026-12-25', '2026-12-26'
-    ],
-    'SI': [
-        // 2025
-        '2025-01-01', '2025-01-02', '2025-02-08', '2025-04-20', '2025-04-21', '2025-04-27', '2025-05-01', '2025-05-02', '2025-06-08', '2025-06-25', '2025-08-15', '2025-10-31', '2025-11-01', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-02', '2026-02-08', '2026-04-06', '2026-04-27', '2026-05-01', '2026-05-02', '2026-06-25', '2026-08-15', '2026-10-31', '2026-11-01', '2026-12-25', '2026-12-26'
-    ],
-    'SK': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-08', '2025-07-05', '2025-08-29', '2025-09-15', '2025-11-01', '2025-11-17', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-04-03', '2026-04-06', '2026-05-01', '2026-07-05', '2026-08-29', '2026-09-15', '2026-11-01', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'FI': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-18', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-20', '2025-12-06', '2025-12-24', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-03', '2026-04-06', '2026-05-01', '2026-05-14', '2026-06-19', '2026-12-06', '2026-12-24', '2026-12-25', '2026-12-26'
-    ],
-    'SE': [
-        // 2025
-        '2025-01-01', '2025-01-06', '2025-04-18', '2025-04-20', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-06', '2025-06-08', '2025-06-21', '2025-11-01', '2025-12-25', '2025-12-26',
-        // 2026
-        '2026-01-01', '2026-01-06', '2026-04-03', '2026-04-05', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-24', '2026-06-06', '2026-06-20', '2026-10-31', '2026-12-25', '2026-12-26'
-    ],
-
-    // European Parliament holidays 2024-2025
-    'EP': [
-        // Public holidays 2024
-        '2024-01-01', // New Year's Day
-        '2024-03-29', // Good Friday
-        '2024-04-01', // Easter Monday
-        '2024-05-01', // Wednesday, Labour Day
-        '2024-05-09', // Thursday, Anniversary of the Schuman declaration / Ascension Day
-        '2024-05-20', // Whit Monday
-        '2024-08-15', // Thursday, Assumption
-        '2024-11-01', // Friday, All Saints' Day
-
-        // Office closing days 2024
-        '2024-01-02', // Tuesday, day following New Year's Day
-        '2024-03-28', // Maundy Thursday
-        '2024-05-10', // Friday, day following Ascension Day
-        // Christmas and New Year period 2024
-        '2024-12-23',
-        '2024-12-24',
-        '2024-12-25',
-        '2024-12-26',
-        '2024-12-27',
-        '2024-12-30',
-        '2024-12-31',
-        '2025-01-01',
-        '2025-01-02',
-        '2025-01-03',
-
-        // Public holidays 2025
-        '2025-01-01', // New Year's Day
-        '2025-04-18', // Good Friday
-        '2025-04-21', // Easter Monday
-        '2025-05-01', // Labour Day
-        '2025-05-09', // Europe Day (Robert Schuman Declaration)
-        '2025-05-29', // Ascension Day
-        '2025-06-09', // Whit Monday
-        '2025-08-15', // Assumption
-        // National Days (Note: these depend on place of employment)
-        '2025-07-21', // National Day in Belgium
-
-        // Office closing days 2025
-        '2025-01-02', // Day following New Year's Day
-        '2025-01-03', // Second day following New Year's Day
-        '2025-04-17', // Maundy Thursday
-        '2025-05-30', // Day after Ascension Day
-        // Christmas and New Year period
-        '2025-12-24',
-        '2025-12-25',
-        '2025-12-26',
-        '2025-12-27',
-        '2025-12-28',
-        '2025-12-29',
-        '2025-12-30',
-        '2025-12-31',
-        '2026-01-01',
-        '2026-01-02',
-
-        // Public holidays 2026
-        '2026-04-02', // Maundy Thursday
-        '2026-04-03', // Good Friday
-        '2026-04-06', // Easter Monday
-        '2026-05-01', // Labour Day
-        '2026-05-14', // Ascension Day
-        '2026-05-15', // Day following Ascension Day
-        '2026-05-25', // Whit Monday
-        // National Days (Note: these depend on place of employment)
-        // '2026-06-23', // National Day in Luxembourg
-        // '2026-07-14', // National Day in France
-        '2026-07-21', // National Day in Belgium
-        '2026-11-02', // All Souls' Day
-
-        // Office closing days 2026
-        '2026-12-24',
-        '2026-12-25',
-        '2026-12-26',
-        '2026-12-27',
-        '2026-12-28',
-        '2026-12-29',
-        '2026-12-30',
-        '2026-12-31',
-        '2027-01-01'
-    ],
-
-    // European Commission holidays 2025
-    'EC': [
-        '2025-01-01', // New Year's Day
-        '2025-01-02', // Day after New Year's Day
-        '2025-04-17', // Maundy Thursday
-        '2025-04-18', // Good Friday
-        '2025-04-21', // Easter Monday
-        '2025-05-01', // Labour Day
-        '2025-05-09', // Anniversary of the Declaration by Robert Schuman in 1950
-        '2025-05-29', // Ascension Day
-        '2025-05-30', // Day after Ascension Day
-        '2025-06-09', // Whit Monday
-        // '2025-06-23', // Luxembourg National Holiday (for staff serving in Luxembourg)
-        '2025-07-21', // Belgian National Holiday (for staff serving in Brussels)
-        '2025-08-15', // Assumption
-        '2025-12-24', // Christmas period
-        '2025-12-25',
-        '2025-12-26',
-        '2025-12-27',
-        '2025-12-28',
-        '2025-12-29',
-        '2025-12-30',
-        '2025-12-31',
-        // European Commission holidays 2026
-        '2026-01-01', // New Year's Day
-        '2026-01-02', // Day after New Year's Day
-        '2026-04-02', // Maundy Thursday
-        '2026-04-03', // Good Friday
-        '2026-04-06', // Easter Monday
-        '2026-05-01', // Labour Day
-        '2026-05-14', // Ascension Day
-        '2026-05-15', // Day after Ascension Day
-        '2026-05-25', // Whit Monday
-        // '2026-06-23', // Luxembourg National Holiday (for staff serving in Luxembourg)
-        '2026-07-21', // Belgian National Holiday (for staff serving in Brussels)
-        '2026-11-02', // All Souls’ Day
-        '2026-12-24', // Christmas period
-        '2026-12-25',
-        '2026-12-26',
-        '2026-12-27',
-        '2026-12-28',
-        '2026-12-29',
-        '2026-12-30',
-        '2026-12-31',
-    ]
-};
-
+// Holiday data organized by country/institution is now loaded from per-system files
+const HOLIDAY_DATA_DIRECTORY = 'holiday-data';
+const AVAILABLE_HOLIDAY_SYSTEMS = [
+    'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EC', 'EE', 'EL', 'EP', 'ES', 'FI', 'FR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'
+];
 const DEFAULT_HOLIDAY_SYSTEM = 'EP';
+const CURRENT_YEAR = new Date().getFullYear();
 
-const holidaySets = Object.fromEntries(
-    Object.entries(holidayData).map(([key, holidays]) => [key, new Set(holidays)])
-);
+const holidayDataFiles = {};
+const availableYearsCache = {};
+const holidayDataSetsBySystem = {};
+const holidaySets = {};
 
-const defaultHolidaySet = holidaySets[DEFAULT_HOLIDAY_SYSTEM];
-
-/**
- * Selects the holiday date set for a given holiday system key.
- * @param {string} holidaySystem - Holiday system key (e.g., 'EP' or an ISO country code).
- * @returns {Set<string>} A Set of date strings in `YYYY-MM-DD` format for the requested holiday system; returns the default EP set if the key is not found.
- */
-function getHolidaySet(holidaySystem) {
-    return holidaySets[holidaySystem] || defaultHolidaySet;
+function isNodeEnvironment() {
+    return typeof module !== 'undefined' && module.exports;
 }
+
+function loadHolidayDataFile(holidaySystem) {
+    if (!AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem)) {
+        return {};
+    }
+
+    if (holidayDataFiles[holidaySystem]) {
+        return holidayDataFiles[holidaySystem];
+    }
+
+    let data = {};
+
+    try {
+        if (isNodeEnvironment()) {
+            const fs = require('fs');
+            const path = require('path');
+            const filePath = path.join(__dirname, HOLIDAY_DATA_DIRECTORY, `${holidaySystem}.json`);
+            data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        } else if (typeof XMLHttpRequest !== 'undefined') {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `${HOLIDAY_DATA_DIRECTORY}/${holidaySystem}.json`, false);
+            xhr.send(null);
+
+            if (xhr.status >= 200 && xhr.status < 300) {
+                data = JSON.parse(xhr.responseText);
+            } else {
+                console.warn(`Failed to load holiday data for ${holidaySystem}: ${xhr.status}`);
+            }
+        }
+    } catch (error) {
+        console.warn(`Error loading holiday data for ${holidaySystem}:`, error);
+    }
+
+    holidayDataFiles[holidaySystem] = data || {};
+    availableYearsCache[holidaySystem] = Object.keys(holidayDataFiles[holidaySystem])
+        .map(year => parseInt(year, 10))
+        .filter(year => !isNaN(year))
+        .sort((a, b) => a - b);
+
+    return holidayDataFiles[holidaySystem];
+}
+
+function ensureHolidayYearLoaded(holidaySystem, year) {
+    if (!AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) || !year) {
+        return;
+    }
+
+    if (!holidayDataSetsBySystem[holidaySystem]) {
+        holidayDataSetsBySystem[holidaySystem] = {};
+    }
+
+    if (holidayDataSetsBySystem[holidaySystem][year]) {
+        return;
+    }
+
+    const data = loadHolidayDataFile(holidaySystem);
+    const yearDates = data[String(year)];
+
+    if (Array.isArray(yearDates)) {
+        holidayDataSetsBySystem[holidaySystem][year] = new Set(yearDates);
+
+        if (!holidaySets[holidaySystem]) {
+            holidaySets[holidaySystem] = new Set();
+        }
+
+        yearDates.forEach(dateStr => holidaySets[holidaySystem].add(dateStr));
+    }
+}
+
+function getHolidayDatesForYear(holidaySystem, year) {
+    const data = loadHolidayDataFile(holidaySystem);
+    const yearDates = data[String(year)];
+    return Array.isArray(yearDates) ? yearDates : [];
+}
+
+function getDefaultHolidaySet() {
+    ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
+    return holidaySets[DEFAULT_HOLIDAY_SYSTEM] || new Set();
+}
+
+const holidayData = new Proxy({}, {
+    get(_target, system) {
+        if (typeof system !== 'string') return undefined;
+        const data = loadHolidayDataFile(system);
+        return Object.values(data || {}).flat();
+    },
+    ownKeys() {
+        return AVAILABLE_HOLIDAY_SYSTEMS;
+    },
+    getOwnPropertyDescriptor() {
+        return { enumerable: true, configurable: true };
+    }
+});
+
+function getHolidaySet(holidaySystem) {
+    const targetSystem = AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) ? holidaySystem : DEFAULT_HOLIDAY_SYSTEM;
+    if (!holidaySets[targetSystem]) {
+        ensureHolidayYearLoaded(targetSystem, CURRENT_YEAR);
+    }
+    return holidaySets[targetSystem] || getDefaultHolidaySet();
+}
+
+ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
 
 // Default holiday system and date format
 let selectedHolidaySystem = DEFAULT_HOLIDAY_SYSTEM;
@@ -336,8 +143,7 @@ let dateFormat = 'dmy-text';
 
 // Sanitize holiday system value to prevent injection via URL parameters or cookies
 function sanitizeHolidaySystem(value) {
-    const allowed = Object.keys(holidayData);
-    return allowed.includes(value) ? value : DEFAULT_HOLIDAY_SYSTEM;
+    return AVAILABLE_HOLIDAY_SYSTEMS.includes(value) ? value : DEFAULT_HOLIDAY_SYSTEM;
 }
 
 // Sanitize date format from allowed list
@@ -400,6 +206,8 @@ if (typeof document !== 'undefined') {
     }
 }
 
+ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
+
 /**
  * Determine whether a given Date falls on a configured holiday.
  * @param {Date} date - The date to check; invalid Date objects are treated as not holidays.
@@ -416,6 +224,11 @@ function isHoliday(date) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
+
+    ensureHolidayYearLoaded(selectedHolidaySystem, year);
+    if (selectedHolidaySystem !== DEFAULT_HOLIDAY_SYSTEM) {
+        ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, year);
+    }
 
     const holidaySet = getHolidaySet(selectedHolidaySystem);
     return holidaySet.has(dateString);
@@ -1199,15 +1012,8 @@ function createResultElement(result) {
 
 // Function to get the years covered by holiday data for a given system
 function getHolidayDataYears(holidaySystem) {
-    const holidays = holidayData[holidaySystem] || [];
-    const years = new Set();
-
-    holidays.forEach(dateStr => {
-        const year = parseInt(dateStr.split('-')[0]);
-        years.add(year);
-    });
-
-    return Array.from(years).sort();
+    loadHolidayDataFile(holidaySystem);
+    return availableYearsCache[holidaySystem] || [];
 }
 
 // Function to check if we have complete holiday data for a date range
@@ -1220,8 +1026,7 @@ function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
 
     for (let year = startYear; year <= endYear; year++) {
         if (holidaySystem === DEFAULT_HOLIDAY_SYSTEM) {
-            const holidays = holidayData[holidaySystem] || [];
-            const yearHolidays = holidays.filter(dateStr => dateStr.startsWith(`${year}-`));
+            const yearHolidays = getHolidayDatesForYear(holidaySystem, year);
 
             if (yearHolidays.length === 0) {
                 // No data at all for this year
@@ -1982,11 +1787,14 @@ if (typeof module !== 'undefined' && module.exports) {
         calculatePeriod,
         setHolidaySystem: function (system) {
             selectedHolidaySystem = sanitizeHolidaySystem(system);
+            ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
+            return selectedHolidaySystem;
         },
         getHolidaySystem: function () {
             return selectedHolidaySystem;
         },
         holidayData,
+        getHolidayDatesForYear,
         getHolidayDataYears,
         checkHolidayDataCoverage,
         generateHolidayWarning
@@ -2070,6 +1878,7 @@ if (typeof module !== 'undefined' && module.exports) {
             holidaySystemSelect.value = selectedHolidaySystem;
             holidaySystemSelect.addEventListener('change', function () {
                 selectedHolidaySystem = sanitizeHolidaySystem(this.value);
+                ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
                 setCookie('holidaySystem', selectedHolidaySystem, 365);
                 updateCalculation();
             });

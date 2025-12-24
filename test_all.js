@@ -2,7 +2,13 @@
 process.env.TZ = 'UTC';
 
 const assert = require('assert');
-const { calculatePeriod, setHolidaySystem, getHolidaySystem, holidayData } = require('./script.js');
+const {
+  calculatePeriod,
+  setHolidaySystem,
+  getHolidaySystem,
+  holidayData,
+  getHolidayDatesForYear
+} = require('./script.js');
 
 // Load strings for testing
 let appStrings;
@@ -908,7 +914,9 @@ console.log(`Holiday system: European Parliament (${periods.getHolidaySystem()})
 console.log(`Period: ${resultEPCoverage.startDate.toISOString().split('T')[0]} to ${resultEPCoverage.finalEndDate.toISOString().split('T')[0]}`);
 
 // Check if EP has full data for the test year or just New Year period
-const epHolidaysForYear = periods.holidayData['EP'].filter(d => d.startsWith(`${coverageTestYear}-`));
+const epHolidaysForYear = periods.getHolidayDatesForYear
+    ? periods.getHolidayDatesForYear('EP', coverageTestYear)
+    : periods.holidayData['EP'].filter(d => d.startsWith(`${coverageTestYear}-`));
 const hasFullDataForYear = epHolidaysForYear.some(dateStr => {
     const date = dateStr.split('-');
     return date[1] !== '01' || parseInt(date[2]) > 7; // Has holidays beyond first week of January
