@@ -31,10 +31,24 @@ const holidayDataSetsBySystem = {};
 const holidaySets = {};
 const holidayLoadErrors = {};
 
+/**
+ * Detects whether the runtime is Node.js using CommonJS `module.exports`.
+ * @returns {boolean} `true` if `module.exports` is available (Node.js/CommonJS), `false` otherwise.
+ */
 function isNodeEnvironment() {
     return typeof module !== 'undefined' && module.exports;
 }
 
+/**
+ * Load and cache holiday JSON data for a given holiday system code.
+ *
+ * Attempts to load the system's JSON data from the filesystem in Node.js or via HTTP fetch in browsers.
+ * On success the parsed data is stored in the module cache and availableYearsCache is updated; on failure
+ * the function records a load error for the system and returns an empty object.
+ *
+ * @param {string} holidaySystem - Holiday system code (one of AVAILABLE_HOLIDAY_SYSTEMS).
+ * @returns {Object} The parsed holiday data object keyed by year, or an empty object if the system is unsupported or loading failed.
+ */
 async function loadHolidayDataFile(holidaySystem) {
     if (!AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem)) {
         return {};
@@ -74,6 +88,17 @@ async function loadHolidayDataFile(holidaySystem) {
     return holidayDataFiles[holidaySystem];
 }
 
+/**
+ * Ensure holiday data for a specific system and calendar year is loaded into in-memory caches.
+ *
+ * Loads the system's holiday file if needed and populates internal caches (`holidayDataSetsBySystem`
+ * and `holidaySets`) with the year's date strings. If the year is not present in the loaded data an
+ * empty set is stored. The function is a no-op for unsupported systems, falsy `year` values, or when
+ * the year's data is already cached.
+ *
+ * @param {string} holidaySystem - Holiday system code (one of AVAILABLE_HOLIDAY_SYSTEMS).
+ * @param {number|string} year - Calendar year to ensure is loaded (e.g., 2025).
+ */
 async function ensureHolidayYearLoaded(holidaySystem, year) {
     if (!AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) || !year) {
         return;
@@ -103,16 +128,33 @@ async function ensureHolidayYearLoaded(holidaySystem, year) {
     }
 }
 
+/**
+ * Ensure holiday data for each specified year of a holiday system is loaded into memory.
+ *
+ * @param {string} holidaySystem - Holiday system identifier (one of AVAILABLE_HOLIDAY_SYSTEMS).
+ * @param {number[]} years - Array of calendar years to load.
+ */
 async function ensureHolidayYearsLoaded(holidaySystem, years) {
     await Promise.all(years.map(year => ensureHolidayYearLoaded(holidaySystem, year)));
 }
 
+/**
+ * Get holiday date strings for a given holiday system and calendar year.
+ *
+ * @param {string} holidaySystem - Holiday system code (one of AVAILABLE_HOLIDAY_SYSTEMS).
+ * @param {number} year - Calendar year to retrieve holidays for.
+ * @returns {string[]} An array of date strings in `YYYY-MM-DD` format for the requested year; an empty array if no data is available.
+ */
 async function getHolidayDatesForYear(holidaySystem, year) {
     const data = await loadHolidayDataFile(holidaySystem);
     const yearDates = data[String(year)];
     return Array.isArray(yearDates) ? yearDates : [];
 }
 
+/**
+ * Ensures holiday data for the default holiday system and current year is loaded and returns the system's holiday set.
+ * @returns {Set<string>} The set of holiday date strings (formatted as `YYYY-MM-DD`) for the default holiday system, or an empty Set if no data is available.
+ */
 async function getDefaultHolidaySet() {
     await ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
     return holidaySets[DEFAULT_HOLIDAY_SYSTEM] || new Set();
@@ -133,6 +175,11 @@ const holidayData = new Proxy({}, {
     }
 });
 
+/**
+ * Obtain the set of holiday date strings for a holiday system for the current year.
+ * @param {string} holidaySystem - Holiday system code (one of AVAILABLE_HOLIDAY_SYSTEMS); if not recognized, the default system is used.
+ * @returns {Set<string>} A set of holiday dates formatted as `YYYY-MM-DD` for the current year; an empty set if no data is available.
+ */
 async function getHolidaySet(holidaySystem) {
     const targetSystem = AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) ? holidaySystem : DEFAULT_HOLIDAY_SYSTEM;
     if (!holidaySets[targetSystem]) {
@@ -144,11 +191,22 @@ async function getHolidaySet(holidaySystem) {
     return holidaySets[targetSystem];
 }
 
+/**
+ * Retrieve the cached set of holiday date strings for a holiday system.
+ * @param {string} holidaySystem - Holiday system code (e.g., 'EP'). If the code is not in AVAILABLE_HOLIDAY_SYSTEMS, the default system is used.
+ * @returns {Set<string>} A Set of holiday dates formatted as `YYYY-MM-DD` for the resolved system, or an empty Set if no cached data exists.
+ */
 function getHolidaySetSync(holidaySystem) {
     const targetSystem = AVAILABLE_HOLIDAY_SYSTEMS.includes(holidaySystem) ? holidaySystem : DEFAULT_HOLIDAY_SYSTEM;
     return holidaySets[targetSystem] || new Set();
 }
 
+/**
+ * Determine whether a given Date falls on a holiday for the specified holiday system.
+ * @param {Date} date - The date to check.
+ * @param {string} [holidaySystem=selectedHolidaySystem] - Holiday system code to use (e.g., 'EP'); defaults to the currently selected system.
+ * @returns {boolean} `true` if the date is listed as a holiday for the holiday system, `false` otherwise (also `false` for invalid dates).
+ */
 function isHolidaySync(date, holidaySystem = selectedHolidaySystem) {
     if (isNaN(date.getTime())) return false;
     const year = date.getFullYear();
@@ -159,10 +217,22 @@ function isHolidaySync(date, holidaySystem = selectedHolidaySystem) {
     return set.has(dateString);
 }
 
+/**
+ * Determine whether a given date is a working day (not a weekend and not a holiday).
+ * @param {Date} date - The date to check.
+ * @returns {boolean} `true` if the date is a working day (not a weekend and not a holiday), `false` otherwise.
+ */
 function isWorkingDaySync(date) {
     return !isWeekend(date) && !isHolidaySync(date);
 }
 
+/**
+ * Produce a list of calendar years spanning the inclusive range between two dates.
+ *
+ * @param {Date} startDate - Starting date of the range; its year is the first element.
+ * @param {Date} endDate - Ending date of the range; its year is the last element.
+ * @returns {number[]} An array of year numbers from startDate.getFullYear() to endDate.getFullYear(), inclusive. Returns an empty array if endDate is earlier than startDate.
+ */
 function getYearsInRange(startDate, endDate) {
     const years = [];
     const startYear = startDate.getFullYear();
@@ -179,7 +249,11 @@ ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
 let selectedHolidaySystem = DEFAULT_HOLIDAY_SYSTEM;
 let dateFormat = 'dmy-text';
 
-// Sanitize holiday system value to prevent injection via URL parameters or cookies
+/**
+ * Validate and normalize a holiday system identifier.
+ * @param {string} value - Candidate holiday system code (e.g., "EP", "DE").
+ * @returns {string} The original `value` if it is one of AVAILABLE_HOLIDAY_SYSTEMS, otherwise `DEFAULT_HOLIDAY_SYSTEM`.
+ */
 function sanitizeHolidaySystem(value) {
     return AVAILABLE_HOLIDAY_SYSTEMS.includes(value) ? value : DEFAULT_HOLIDAY_SYSTEM;
 }
@@ -278,11 +352,21 @@ function isWeekend(date) {
     return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
 }
 
+/**
+ * Determine whether a given date is a working day (not a weekend and not a holiday).
+ * @param {Date} date - The date to evaluate.
+ * @returns {boolean} `true` if the date is a working day, `false` otherwise.
+ */
 async function isWorkingDay(date) {
     if (isWeekend(date)) return false;
     return !(await isHoliday(date));
 }
 
+/**
+ * Finds the next calendar date after the given date that is a working day.
+ * @param {Date} date - The starting date; the search begins from the following calendar day.
+ * @returns {Promise<Date>} The next date that is a working day.
+ */
 async function findNextWorkingDay(date) {
     let nextDay = new Date(date);
     nextDay.setDate(nextDay.getDate() + 1);
@@ -320,6 +404,13 @@ function formatDateTime(date) {
     return dateFormat === 'iso' ? `${dateStr} ${timeStr}` : `${dateStr}, ${timeStr}`;
 }
 
+/**
+ * Update the visible preview of the selected event date.
+ *
+ * Reads the value of the input element with id "eventDate" and sets the textContent
+ * of the element with id "eventDateFormatted" to the formatted date; clears the preview
+ * when the input is empty or the value is not a valid date.
+ */
 function updateEventDateDisplay() {
     const input = document.getElementById('eventDate');
     const preview = document.getElementById('eventDateFormatted');
@@ -335,7 +426,24 @@ function updateEventDateDisplay() {
     }
 }
 
-// Combined implementation of Articles 3(1), 3(2), 3(3), and 3(4)
+/**
+ * Calculate period start and end dates for a given event according to Articles 3(1)–3(5) rules, including working-day and holiday adjustments.
+ *
+ * The function applies Article 3(1) (skip event hour/day), Article 3(2) (period length by hours/days/working-days/weeks/months/years with overflow rules), Article 3(4) (extend to next working day when appropriate) and Article 3(5) (ensure at least two working days) and returns a structured result describing the computed period, applied legal rules, explanations, and any holiday-data coverage warning.
+ *
+ * @param {Date} eventDateTime - The event date/time from which the period runs (Date object).
+ * @param {number} periodValue - Signed integer length of the period; negative values indicate retroactive periods.
+ * @param {string} periodType - Unit of the period. One of: 'hours', 'working-days', 'days', 'weeks', 'months', 'years'.
+ * @returns {Object} An object describing the calculation:
+ *   - {Date} eventDate - Normalized copy of the provided event date/time.
+ *   - {Date|null} startDate - Computed start date/time after applying Article 3(1).
+ *   - {Date|null} initialEndDate - End date/time after applying Article 3(2) (before extensions).
+ *   - {Date|null} finalEndDate - Final end date/time after applying Article 3(4) and Article 3(5) adjustments.
+ *   - {string[]} appliedRules - Array of applied rule identifiers or localized rule strings.
+ *   - {string[]} explanation - Array of human-readable explanation strings (localized when available).
+ *   - {number} workingDaysCount - Number of working days counted in the original period (before any extension).
+ *   - {string|null} holidayDataWarning - Human-readable warning when holiday data coverage for the period is incomplete, or `null` when coverage is complete.
+ */
 async function calculatePeriod(eventDateTime, periodValue, periodType) {
     const result = {
         eventDate: new Date(eventDateTime),
@@ -778,6 +886,19 @@ function renderCalendar(result) {
     }
 }
 
+/**
+ * Render a single month's calendar into a DOM container, marking weekends, holidays, working days, the calculated period, start/event/end dates, and any extension days.
+ *
+ * The function appends a month header and a Monday-starting 7xN grid to `container`. For each day in the month it adds CSS classes such as:
+ * - `weekend`, `holiday`, `working-day`, `today`
+ * - `in-period` (days between the calculation's start and final end)
+ * - `start-date`, `event-date`, `end-date`, `start-event-date` (when a day matches multiple roles)
+ * - `extension` (days added beyond the initial end date to satisfy rules)
+ *
+ * @param {Date} date - A Date whose month and year determine the calendar month to render (day component is ignored).
+ * @param {Object} result - Calculation result object containing at least `startDate`, `finalEndDate`, `initialEndDate`, and `eventDate` (Date objects) used to determine period and markers.
+ * @param {HTMLElement} container - DOM element to receive the rendered month header and calendar grid.
+ */
 function renderMonthCalendar(date, result, container) {
     // Create month header
     const monthHeader = document.createElement('div');
@@ -902,7 +1023,16 @@ function isSameDay(date1, date2) {
 
 
 
-// Safe DOM creation function
+/**
+ * Build a safe DOM element that displays a calculation result (dates, explanations, warnings, and export controls).
+ *
+ * Creates a container element showing the final end date, the selected holiday system, any holiday-data warning (HTML stripped), the regulation explanations (links allowed only for validated EUR-Lex hrefs), export buttons (calendar / share), and the calendar visualization.
+ *
+ * Side effects: stores the provided result on `window.currentCalculationResult`, calls `renderCalendar(result)`, and wires export button handlers (opens modal / copies permalink). The holiday-data warning text is sanitized by stripping all HTML before display.
+ *
+ * @param {Object} result - Calculation result object produced by calculatePeriod.
+ * @returns {HTMLElement} The root DOM element containing the rendered result UI.
+ */
 function createResultElement(result) {
     const container = document.createElement('div');
     container.className = 'result-container';
@@ -1050,13 +1180,31 @@ function createResultElement(result) {
     return container;
 }
 
-// Function to get the years covered by holiday data for a given system
+/**
+ * Get the calendar years for which holiday data exists for a holiday system.
+ * @param {string} holidaySystem - Holiday system code (one of the available holiday systems, e.g. "EP", "DE").
+ * @returns {number[]} An array of available years for the specified system, sorted ascending; empty array if no data is available.
+ */
 async function getHolidayDataYears(holidaySystem) {
     await loadHolidayDataFile(holidaySystem);
     return availableYearsCache[holidaySystem] || [];
 }
 
-// Function to check if we have complete holiday data for a date range
+/**
+ * Determine whether holiday data fully covers the calendar range between two dates for a given holiday system.
+ *
+ * For the default holiday system, treats years that contain only New Year week entries (Jan 1–7) as incomplete
+ * when the requested period in that year extends beyond January 7; for other systems, requires the year to be listed
+ * among available years.
+ *
+ * @param {Date} startDate - Inclusive start of the period to check.
+ * @param {Date} endDate - Inclusive end of the period to check.
+ * @param {string} holidaySystem - Holiday system identifier (one of AVAILABLE_HOLIDAY_SYSTEMS).
+ * @returns {{isComplete: boolean, missingYears: number[], availableYears: number[]}} Object describing coverage:
+ *   - `isComplete`: `true` if holiday data covers every year spanned by the period, `false` otherwise.
+ *   - `missingYears`: list of years that lack sufficient holiday data for the requested period.
+ *   - `availableYears`: list of years for which holiday data exists for the given system.
+ */
 async function checkHolidayDataCoverage(startDate, endDate, holidaySystem) {
     const availableYears = await getHolidayDataYears(holidaySystem);
     const startYear = startDate.getFullYear();
@@ -1608,7 +1756,11 @@ if (typeof document !== 'undefined') {
     });
 }
 
-// Function to handle form submission
+/**
+ * Handle the period form submission: prevent default browser submission, validate inputs, compute the period result, and render it into the #result container.
+ *
+ * If the selected period type is "hours" and no event time is provided, displays an alert and aborts processing. Reads form values (date, time, period value, period type), constructs the event DateTime, calls `calculatePeriod(...)`, clears previous results and appends the newly created result element.
+ */
 async function handleSubmit(event) {
     event.preventDefault();
 
@@ -1978,7 +2130,12 @@ if (typeof module !== 'undefined' && module.exports) {
         updateCalculation().catch(console.error);
     });
 
-    // Function to populate UI elements from strings
+    /**
+     * Populate visible UI text and links from the global `appStrings` object.
+     *
+     * Reads localized strings from `appStrings` and updates footer content, source links,
+     * modal placeholders, and small helper texts in the DOM. No-op when `appStrings` is not available.
+     */
     function populateUIFromStrings() {
         if (!appStrings) return;
 
@@ -2101,7 +2258,11 @@ if (typeof module !== 'undefined' && module.exports) {
         }
     }
 
-    // Function to update the calculation
+    /**
+     * Read the current form inputs, compute the period based on those inputs, render the calculation result into the page, and update the permalink.
+     *
+     * Reads the event date, event time, period value, and period type from the form; validates required inputs; constructs the event Date/Time; calls `calculatePeriod` to produce the result; replaces the contents of the `#result` container with the rendered result element; and updates the browser URL to reflect the current form state.
+     */
     async function updateCalculation() {
         const eventDate = document.getElementById('eventDate').value;
         const eventTime = document.getElementById('eventTime').value;
