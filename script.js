@@ -405,6 +405,45 @@ function formatDateTime(date) {
 }
 
 /**
+ * Parse a YYYY-MM-DD input string into a local Date without timezone shifting.
+ * @param {string} dateString - The date string from the input element.
+ * @returns {Date|null} A Date at local midnight for the provided day, or null if parsing fails.
+ */
+function parseLocalDate(dateString) {
+    if (!dateString) return null;
+
+    const [year, month, day] = dateString.split('-').map(part => parseInt(part, 10));
+    if ([year, month, day].some(value => Number.isNaN(value))) {
+        return null;
+    }
+
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+/**
+ * Build a Date from the form inputs, preserving the local calendar day regardless of timezone.
+ * @param {string} dateString - The date string from the input element.
+ * @param {string} [timeString] - Optional HH:MM string from the time input.
+ * @returns {Date|null} A Date representing the local date/time selection, or null if parsing fails.
+ */
+function createEventDateTime(dateString, timeString) {
+    const date = parseLocalDate(dateString);
+    if (!date) return null;
+
+    if (timeString) {
+        const [hours, minutes] = timeString.split(':').map(part => parseInt(part, 10));
+        if ([hours, minutes].some(value => Number.isNaN(value))) {
+            return null;
+        }
+        date.setHours(hours, minutes, 0, 0);
+    }
+
+    return date;
+}
+
+/**
  * Update the visible preview of the selected event date.
  *
  * Reads the value of the input element with id "eventDate" and sets the textContent
@@ -418,8 +457,8 @@ function updateEventDateDisplay() {
         if (preview) preview.textContent = '';
         return;
     }
-    const date = new Date(input.value);
-    if (!isNaN(date)) {
+    const date = parseLocalDate(input.value);
+    if (date instanceof Date && !isNaN(date)) {
         preview.textContent = formatDate(date);
     } else {
         preview.textContent = '';
@@ -1776,13 +1815,10 @@ async function handleSubmit(event) {
     }
 
     // Create event date/time
-    const eventDateTime = new Date(eventDate);
-    if (eventTime) {
-        const [hours, minutes] = eventTime.split(':');
-        eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    } else {
-        // If no time provided, set to start of day
-        eventDateTime.setHours(0, 0, 0, 0);
+    const eventDateTime = createEventDateTime(eventDate, eventTime);
+    if (!eventDateTime) {
+        alert(appStrings?.errors?.invalidDate || 'Please provide a valid event date and time.');
+        return;
     }
 
     const result = await calculatePeriod(eventDateTime, periodValue, periodType);
@@ -1989,7 +2025,8 @@ if (typeof module !== 'undefined' && module.exports) {
         getHolidayDatesForYear,
         getHolidayDataYears,
         checkHolidayDataCoverage,
-        generateHolidayWarning
+        generateHolidayWarning,
+        createEventDateTime
     };
 } else if (typeof window !== 'undefined') {
     // Browser-specific code
@@ -2280,13 +2317,9 @@ if (typeof module !== 'undefined' && module.exports) {
         }
 
         // Create event date/time
-        const eventDateTime = new Date(eventDate);
-        if (eventTime) {
-            const [hours, minutes] = eventTime.split(':');
-            eventDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        } else {
-            // If no time provided, set to start of day
-            eventDateTime.setHours(0, 0, 0, 0);
+        const eventDateTime = createEventDateTime(eventDate, eventTime);
+        if (!eventDateTime) {
+            return;
         }
 
         const result = await calculatePeriod(eventDateTime, periodValue, periodType);
