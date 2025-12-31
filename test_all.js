@@ -792,6 +792,32 @@ async function testRetroactiveCalculations() {
     console.log('  ✓ Retroactive hours calculation works correctly');
 }
 
+// Ensure date parsing preserves the selected calendar day across timezones
+async function testLocalDateParsing() {
+    const { spawnSync } = require('child_process');
+
+    const child = spawnSync(process.execPath, [
+        '-e',
+        `
+        const path = require('path');
+        const { createEventDateTime } = require(path.join(process.cwd(), 'script.js'));
+        const withTime = createEventDateTime('2025-12-31', '13:44');
+        const withoutTime = createEventDateTime('2025-12-31');
+        console.log([withTime.getFullYear(), withTime.getMonth() + 1, withTime.getDate()].join('-'));
+        console.log([withoutTime.getFullYear(), withoutTime.getMonth() + 1, withoutTime.getDate()].join('-'));
+        `
+    ], {
+        env: { ...process.env, TZ: 'America/Sao_Paulo' },
+        cwd: __dirname
+    });
+
+    assert.strictEqual(child.status, 0, 'Timezone parsing check should exit successfully');
+    const [withTime, withoutTime] = child.stdout.toString().trim().split('\n');
+
+    assert.strictEqual(withTime, '2025-12-31', 'Date with time should preserve the selected day in another timezone');
+    assert.strictEqual(withoutTime, '2025-12-31', 'Date without time should preserve the selected day in another timezone');
+}
+
 console.log('Running tests...');
 
 const tests = [
@@ -822,7 +848,8 @@ const tests = [
     { name: 'Days vs Weeks calculation difference', fn: testDaysVsWeeksCalculation },
     { name: 'Holiday system sanitization (Security)', fn: testHolidaySystemSanitization },
     { name: 'HTML injection prevention in warning messages', fn: testHtmlInjectionPrevention },
-    { name: 'Retroactive calculations', fn: testRetroactiveCalculations }
+    { name: 'Retroactive calculations', fn: testRetroactiveCalculations },
+    { name: 'Local date parsing preserves selected day', fn: testLocalDateParsing }
 ];
 
 async function runTests() {
