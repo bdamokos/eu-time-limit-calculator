@@ -458,7 +458,7 @@ function updateEventDateDisplay() {
         return;
     }
     const date = parseLocalDate(input.value);
-    if (date instanceof Date && !isNaN(date)) {
+    if (date) {
         preview.textContent = formatDate(date);
     } else {
         preview.textContent = '';
