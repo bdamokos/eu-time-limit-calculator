@@ -26,6 +26,7 @@ const DEFAULT_HOLIDAY_SYSTEM = 'EP';
 const CURRENT_YEAR = new Date().getFullYear();
 
 const holidayDataFiles = {};
+const holidayDataFilePromises = {};
 const availableYearsCache = {};
 const holidayDataSetsBySystem = {};
 const holidaySets = {};
@@ -58,34 +59,43 @@ async function loadHolidayDataFile(holidaySystem) {
         return holidayDataFiles[holidaySystem];
     }
 
-    let data = {};
-
-    try {
-        if (isNodeEnvironment()) {
-            const fs = require('fs').promises;
-            const path = require('path');
-            const filePath = path.join(__dirname, HOLIDAY_DATA_DIRECTORY, `${holidaySystem}.json`);
-            const fileContents = await fs.readFile(filePath, 'utf8');
-            data = JSON.parse(fileContents);
-        } else if (typeof fetch !== 'undefined') {
-            const response = await fetch(`${HOLIDAY_DATA_DIRECTORY}/${holidaySystem}.json`);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            data = await response.json();
-        }
-    } catch (error) {
-        console.warn(`Error loading holiday data for ${holidaySystem}:`, error);
-        holidayLoadErrors[holidaySystem] = true;
+    if (holidayDataFilePromises[holidaySystem]) {
+        return holidayDataFilePromises[holidaySystem];
     }
 
-    holidayDataFiles[holidaySystem] = data || {};
-    availableYearsCache[holidaySystem] = Object.keys(holidayDataFiles[holidaySystem])
-        .map(year => parseInt(year, 10))
-        .filter(year => !isNaN(year))
-        .sort((a, b) => a - b);
+    holidayDataFilePromises[holidaySystem] = (async () => {
+        let data = {};
 
-    return holidayDataFiles[holidaySystem];
+        try {
+            if (isNodeEnvironment()) {
+                const fs = require('fs').promises;
+                const path = require('path');
+                const filePath = path.join(__dirname, HOLIDAY_DATA_DIRECTORY, `${holidaySystem}.json`);
+                const fileContents = await fs.readFile(filePath, 'utf8');
+                data = JSON.parse(fileContents);
+            } else if (typeof fetch !== 'undefined') {
+                const response = await fetch(`${HOLIDAY_DATA_DIRECTORY}/${holidaySystem}.json`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                data = await response.json();
+            }
+        } catch (error) {
+            console.warn(`Error loading holiday data for ${holidaySystem}:`, error);
+            holidayLoadErrors[holidaySystem] = true;
+        }
+
+        holidayDataFiles[holidaySystem] = data || {};
+        availableYearsCache[holidaySystem] = Object.keys(holidayDataFiles[holidaySystem])
+            .map(year => parseInt(year, 10))
+            .filter(year => !isNaN(year))
+            .sort((a, b) => a - b);
+
+        delete holidayDataFilePromises[holidaySystem];
+        return holidayDataFiles[holidaySystem];
+    })();
+
+    return holidayDataFilePromises[holidaySystem];
 }
 
 /**
@@ -243,8 +253,6 @@ function getYearsInRange(startDate, endDate) {
     return years;
 }
 
-ensureHolidayYearLoaded(DEFAULT_HOLIDAY_SYSTEM, CURRENT_YEAR);
-
 // Default holiday system and date format
 let selectedHolidaySystem = DEFAULT_HOLIDAY_SYSTEM;
 let dateFormat = 'dmy-text';
@@ -317,8 +325,6 @@ if (typeof document !== 'undefined') {
         }
     }
 }
-
-ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);
 
 /**
  * Determine whether a given Date falls on a configured holiday.
@@ -859,11 +865,11 @@ function renderCalendar(result) {
     const legendItems = [
         { color: '#1a73e8', label: legendLabels.startOfPeriod || 'Start of period' },
         { color: '#1557b0', label: legendLabels.endOfPeriod || 'End of period' },
-        { color: '#f3e5f5', border: '1px dashed #9c27b0', label: legendLabels.eventDate || 'Event Date' },
-        { background: 'linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%)', border: '1px dashed #9c27b0', label: legendLabels.startEventDate || 'Start + Event Date' },
-        { color: '#e8f0fe', label: legendLabels.workingDay || 'Working Day' },
-        { color: '#fff3cd', label: legendLabels.holiday || 'Holiday' },
-        { color: '#f8f9fa', border: '1px solid #dee2e6', label: legendLabels.weekend || 'Weekend' },
+        { color: '#ead7f2', border: '1px dashed #7b1fa2', label: legendLabels.eventDate || 'Event Date' },
+        { background: 'linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #ead7f2 51%, #ead7f2 100%)', border: '1px dashed #7b1fa2', label: legendLabels.startEventDate || 'Start + Event Date' },
+        { color: '#dbe7ff', label: legendLabels.workingDay || 'Working Day' },
+        { color: '#ffe3a3', label: legendLabels.holiday || 'Holiday' },
+        { color: '#e2e8f0', border: '1px solid #cbd5e1', label: legendLabels.weekend || 'Weekend' },
         { border: '1px solid #1a73e8', label: legendLabels.inPeriod || 'In Period' },
         { border: '1px dashed #1a73e8', label: legendLabels.extension || 'Extension' },
         { border: '2px solid #dc3545', label: legendLabels.today || 'Today' }

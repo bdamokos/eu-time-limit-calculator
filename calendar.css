@@ -53,18 +53,18 @@
 }
 
 .calendar-day.weekend {
-    background-color: #f8f9fa;
-    color: #999;
+    background-color: #e2e8f0;
+    color: #475569;
 }
 
 .calendar-day.holiday {
-    background-color: #fff3cd;
-    color: #856404;
+    background-color: #ffe3a3;
+    color: #7a4b00;
 }
 
 .calendar-day.working-day {
-    background-color: #e8f0fe;
-    color: #1557b0;
+    background-color: #dbe7ff;
+    color: #0f3d91;
 }
 
 .calendar-day.in-period {
@@ -77,9 +77,9 @@
 }
 
 .calendar-day.event-date {
-    background-color: #f3e5f5;
-    border: 1px dashed #9c27b0;
-    color: #9c27b0;
+    background-color: #ead7f2;
+    border: 1px dashed #7b1fa2;
+    color: #6a1b9a;
 }
 
 .calendar-day.end-date {
@@ -88,19 +88,19 @@
 }
 
 .calendar-day.start-event-date {
-    border: 1px dashed #9c27b0;
+    border: 1px dashed #7b1fa2;
     font-weight: bold;
     
     /* Multiple backgrounds: text color gradient and background split */
     background: 
-        linear-gradient(to bottom right, white 0%, white 49%, #9c27b0 51%, #9c27b0 100%),
-        linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #f3e5f5 51%, #f3e5f5 100%);
+        linear-gradient(to bottom right, white 0%, white 49%, #7b1fa2 51%, #7b1fa2 100%),
+        linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #ead7f2 51%, #ead7f2 100%);
     background-clip: text, padding-box;
     -webkit-background-clip: text, padding-box;
     color: transparent;
     
     /* Subtle text outline for better readability */
-    -webkit-text-stroke: 0.5px rgba(0,0,0,0.2);
+    -webkit-text-stroke: 0.75px rgba(0,0,0,0.3);
 }
 
 .calendar-day.extension {
