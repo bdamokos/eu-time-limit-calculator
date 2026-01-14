@@ -64,7 +64,7 @@
 
 .calendar-day.working-day {
     background-color: #e8f0fe;
-    color: #1a73e8;
+    color: #1557b0;
 }
 
 .calendar-day.in-period {
@@ -155,8 +155,8 @@
 
 .calendar-navigation button {
     background-color: #e8f0fe;
-    color: #1a73e8;
-    border: 1px solid #1a73e8;
+    color: #1557b0;
+    border: 1px solid #1557b0;
     padding: 4px 8px;
     border-radius: 4px;
     cursor: pointer;

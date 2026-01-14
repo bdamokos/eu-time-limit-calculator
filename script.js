@@ -1661,25 +1661,88 @@ function generateOutlookWebLink(result, deadlineName, periodDescription, isDeadl
 }
 
 // Modal functions
+let lastFocusedElement = null;
+let modalKeydownHandler = null;
+
+function getFocusableElements(container) {
+    if (!container) return [];
+    return Array.from(
+        container.querySelectorAll(
+            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+    ).filter(element => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
+}
+
+function isCalendarModalOpen() {
+    const modal = document.getElementById('calendarModal');
+    return modal && modal.getAttribute('aria-hidden') === 'false';
+}
+
 function openCalendarModal() {
     if (!window.currentCalculationResult) return;
 
     const modal = document.getElementById('calendarModal');
+    if (!modal) return;
+    lastFocusedElement = document.activeElement;
     modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
 
-    // Set focus to event name input and populate from permalink if available
+    if (modalKeydownHandler) {
+        document.removeEventListener('keydown', modalKeydownHandler);
+    }
+
+    modalKeydownHandler = function (event) {
+        if (event.key !== 'Tab') return;
+        const focusableElements = getFocusableElements(modal);
+        if (focusableElements.length === 0) {
+            event.preventDefault();
+            return;
+        }
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    };
+
+    document.addEventListener('keydown', modalKeydownHandler);
+
     setTimeout(() => {
         const eventNameInput = document.getElementById('modalDeadlineName');
-        if (window.permalinkEventName && !eventNameInput.value) {
-            eventNameInput.value = window.permalinkEventName;
+        if (eventNameInput) {
+            if (window.permalinkEventName && !eventNameInput.value) {
+                eventNameInput.value = window.permalinkEventName;
+            }
+            eventNameInput.focus();
+        } else {
+            const focusableElements = getFocusableElements(modal);
+            if (focusableElements.length > 0) {
+                focusableElements[0].focus();
+            }
         }
-        eventNameInput.focus();
     }, 100);
 }
 
 function closeCalendarModal() {
     const modal = document.getElementById('calendarModal');
+    if (!modal) return;
     modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+
+    if (modalKeydownHandler) {
+        document.removeEventListener('keydown', modalKeydownHandler);
+        modalKeydownHandler = null;
+    }
+
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        lastFocusedElement.focus();
+    }
+    lastFocusedElement = null;
 }
 
 // Modal export handler
@@ -1789,7 +1852,7 @@ if (typeof document !== 'undefined') {
 
     // Close modal with Escape key
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') {
+        if (event.key === 'Escape' && isCalendarModalOpen()) {
             closeCalendarModal();
         }
     });
@@ -2148,14 +2211,37 @@ if (typeof module !== 'undefined' && module.exports) {
         }
 
         if (settingsBtn && settingsPanel) {
+            const setSettingsPanelState = (isOpen, { restoreFocus } = {}) => {
+                settingsPanel.classList.toggle('show', isOpen);
+                settingsBtn.setAttribute('aria-expanded', String(isOpen));
+                settingsPanel.setAttribute('aria-hidden', String(!isOpen));
+                if (isOpen) {
+                    const focusTarget = settingsPanel.querySelector('select, input, button, [tabindex]:not([tabindex="-1"])');
+                    if (focusTarget) {
+                        focusTarget.focus();
+                    }
+                } else if (restoreFocus) {
+                    settingsBtn.focus();
+                }
+            };
+
+            setSettingsPanelState(false);
+
             settingsBtn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                settingsPanel.classList.toggle('show');
+                const isOpen = settingsPanel.classList.contains('show');
+                setSettingsPanelState(!isOpen, { restoreFocus: isOpen });
             });
 
             document.addEventListener('click', function (e) {
                 if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
-                    settingsPanel.classList.remove('show');
+                    setSettingsPanelState(false);
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && settingsPanel.classList.contains('show')) {
+                    setSettingsPanelState(false, { restoreFocus: true });
                 }
             });
         }

@@ -74,6 +74,7 @@
         .settings-btn {
             background: none;
             border: none;
+            color: #1557b0;
             font-size: 20px;
             cursor: pointer;
         }
@@ -134,8 +135,8 @@
         }
         .preset-btn {
             background-color: #e8f0fe;
-            color: #1a73e8;
-            border: 1px solid #1a73e8;
+            color: #1557b0;
+            border: 1px solid #1557b0;
             padding: 6px 12px;
             font-size: 14px;
             font-weight: 500;
@@ -165,7 +166,7 @@
             border-top: 1px solid #e9ecef;
         }
         footer a {
-            color: #1a73e8;
+            color: #1557b0;
             text-decoration: none;
         }
         footer a:hover {
@@ -179,8 +180,8 @@
             <h1>Deadline calculator</h1>
             <h2>Based on EU Regulation 1182/71</h2>
             <div class="settings-container">
-                <button id="settings-btn" class="settings-btn" aria-label="Settings">⚙️</button>
-                <div id="settings-panel" class="settings-panel">
+                <button id="settings-btn" class="settings-btn" aria-label="Settings" aria-controls="settings-panel" aria-expanded="false">⚙️</button>
+                <div id="settings-panel" class="settings-panel" role="region" aria-labelledby="settings-btn" aria-hidden="true">
                     <label for="dateFormatSelect">Date Format:</label>
                     <select id="dateFormatSelect">
                         <option value="dmy-text">31 Dec 2024</option>
@@ -238,8 +239,8 @@
             
             <div class="form-group">
                 <label for="eventTime">Event Time (optional):</label>
-                <input type="time" id="eventTime">
-                <small style="color: #666; display: block; margin-top: 4px;">Only required for hour-based calculations</small>
+                <input type="time" id="eventTime" aria-describedby="eventTimeHint">
+                <small id="eventTimeHint" style="color: #666; display: block; margin-top: 4px;">Only required for hour-based calculations</small>
             </div>
             
             <div class="form-group">
@@ -272,8 +273,8 @@
             <button type="submit">Calculate</button>
         </form>
         
-        <div id="result"></div>
-        <div id="calendar-container" class="calendar-container"></div>
+        <div id="result" aria-live="polite" aria-atomic="true"></div>
+        <div id="calendar-container" class="calendar-container" aria-live="polite"></div>
     </div>
     
     <footer id="footer-content">
@@ -281,11 +282,11 @@
     </footer>
 
     <!-- Calendar Export Modal -->
-    <div id="calendarModal" class="modal" style="display: none;">
+    <div id="calendarModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="calendarModalTitle" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📅 Export to Calendar</h3>
-                <span class="close" onclick="closeCalendarModal()">&times;</span>
+                <h3 id="calendarModalTitle">📅 Export to Calendar</h3>
+                <button type="button" class="close" aria-label="Close" onclick="closeCalendarModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -296,8 +297,9 @@
                            maxlength="100"
                            autocomplete="off"
                            spellcheck="true"
+                           aria-describedby="modalDeadlineNameHint"
                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    <small style="color: #666; display: block; margin-top: 4px;">This will appear as the event title in your calendar (max 100 characters)</small>
+                    <small id="modalDeadlineNameHint" style="color: #666; display: block; margin-top: 4px;">This will appear as the event title in your calendar (max 100 characters)</small>
                 </div>
 
                 <div style="margin-bottom: 20px;">
