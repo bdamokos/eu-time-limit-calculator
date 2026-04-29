@@ -41,6 +41,37 @@ The calculator uses official 2025 public holiday data from:
    - Or select European Parliament/Commission for EU institutional work
 4. Click "Calculate" to see the result with visual calendar
 
+## JavaScript Module
+
+The calculation engine is also available as a standalone ES module that can be imported from another static page:
+
+```html
+<script type="module">
+  import { calculateDeadline } from 'https://bdamokos.github.io/eu-time-limit-calculator/calculator.js';
+
+  const response = await calculateDeadline({
+    date: '2025-04-03',
+    period: 2,
+    type: 'days',
+    holidays: 'EP',
+    format: 'iso'
+  });
+
+  console.log(response);
+</script>
+```
+
+The module returns plain JSON-compatible objects. It loads public holiday data from the repository's `holiday-data/` directory relative to `calculator.js`, so it works when imported from GitHub Pages without a server-side API.
+
+Supported options:
+
+- `date`: event date in `YYYY-MM-DD` format
+- `time`: event time in `HH:MM` format, required for `type: 'hours'`
+- `period`: non-zero integer period value; negative values calculate retroactively
+- `type`: `hours`, `working-days`, `days`, `weeks`, `months`, or `years`
+- `holidays`: optional holiday system code, default `EP`
+- `format`: optional display format, default `dmy-text`
+
 ## Legal Implementation
 
 This calculator implements the time calculation rules from **EU Regulation 1182/71**:

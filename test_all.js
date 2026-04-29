@@ -34,6 +34,37 @@ async function testArticle31() {
     assert.strictEqual(iso(dayRes.finalEndDate), '2025-04-07T23:59:59.999Z');
 }
 
+async function testStandaloneModule() {
+    const calculator = await import('./calculator.js');
+
+    const response = await calculator.calculateDeadline({
+        date: '2025-04-03',
+        period: 2,
+        type: 'days',
+        holidays: 'EP',
+        format: 'iso'
+    });
+
+    assert.strictEqual(response.ok, true, 'Standalone module response should be successful');
+    assert.strictEqual(response.input.date, '2025-04-03');
+    assert.strictEqual(response.input.period, 2);
+    assert.strictEqual(response.input.type, 'days');
+    assert.strictEqual(response.input.holidays, 'EP');
+    assert.strictEqual(response.result.finalEndDate, '2025-04-07T23:59:59.999Z');
+    assert.strictEqual(response.result.finalDate, '2025-04-07');
+
+    const existingResult = await calculatePeriod(new Date('2025-04-03T00:00:00Z'), 2, 'days');
+    assert.strictEqual(response.result.finalEndDate, existingResult.finalEndDate.toISOString());
+
+    const invalidResponse = await calculator.calculateDeadline({
+        date: '2025-04-03',
+        period: 2,
+        type: 'fortnights'
+    });
+    assert.strictEqual(invalidResponse.ok, false, 'Standalone module should reject invalid period types');
+    assert(invalidResponse.errors.some(error => error.includes('type must be one of')), 'Standalone module should explain invalid period type');
+}
+
 // Article 3(2) - working vs calendar days
 async function testArticle32() {
     const workRes = await calculatePeriod(new Date('2025-04-03T00:00:00Z'), 2, 'working-days');
@@ -832,6 +863,7 @@ const tests = [
     { name: 'Fallback behavior when strings unavailable', fn: testFallbackBehavior },
     
     // Core functionality tests
+    { name: 'Standalone module', fn: testStandaloneModule },
     { name: 'Article 3(1)', fn: testArticle31 },
     { name: 'Article 3(2)', fn: testArticle32 },
     { name: 'Article 3(3) and 3(4)', fn: testArticle33and34 },
