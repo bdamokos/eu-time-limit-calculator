@@ -863,16 +863,16 @@ function renderCalendar(result) {
     // Define legend items with their styles and labels
     const legendLabels = appStrings?.legend || {};
     const legendItems = [
-        { color: '#1a73e8', label: legendLabels.startOfPeriod || 'Start of period' },
-        { color: '#1557b0', label: legendLabels.endOfPeriod || 'End of period' },
-        { color: '#ead7f2', border: '1px dashed #7b1fa2', label: legendLabels.eventDate || 'Event Date' },
-        { background: 'linear-gradient(to bottom right, #1a73e8 0%, #1a73e8 49%, #ead7f2 51%, #ead7f2 100%)', border: '1px dashed #7b1fa2', label: legendLabels.startEventDate || 'Start + Event Date' },
-        { color: '#dbe7ff', label: legendLabels.workingDay || 'Working Day' },
-        { color: '#ffe3a3', label: legendLabels.holiday || 'Holiday' },
-        { color: '#e2e8f0', border: '1px solid #cbd5e1', label: legendLabels.weekend || 'Weekend' },
-        { border: '1px solid #1a73e8', label: legendLabels.inPeriod || 'In Period' },
-        { border: '1px dashed #1a73e8', label: legendLabels.extension || 'Extension' },
-        { border: '2px solid #dc3545', label: legendLabels.today || 'Today' }
+        { color: 'var(--accent)', label: legendLabels.startOfPeriod || 'Start of period' },
+        { color: 'var(--accent-hover)', label: legendLabels.endOfPeriod || 'End of period' },
+        { color: 'oklch(0.91 0.04 310)', border: '1px dashed oklch(0.45 0.14 310)', label: legendLabels.eventDate || 'Event Date' },
+        { background: 'linear-gradient(to bottom right, var(--accent) 0%, var(--accent) 49%, oklch(0.91 0.04 310) 51%, oklch(0.91 0.04 310) 100%)', border: '1px dashed oklch(0.45 0.14 310)', label: legendLabels.startEventDate || 'Start + Event Date' },
+        { color: 'var(--accent-soft)', label: legendLabels.workingDay || 'Working Day' },
+        { color: 'oklch(0.91 0.06 86)', label: legendLabels.holiday || 'Holiday' },
+        { color: 'oklch(0.9 0.015 232)', border: '1px solid var(--border-strong)', label: legendLabels.weekend || 'Weekend' },
+        { border: '1px solid var(--accent)', label: legendLabels.inPeriod || 'In Period' },
+        { border: '1px dashed var(--accent)', label: legendLabels.extension || 'Extension' },
+        { border: '2px solid var(--danger)', label: legendLabels.today || 'Today' }
     ];
 
     // Create each legend item safely
@@ -1093,7 +1093,7 @@ function createResultElement(result) {
     const getHolidaySystemNames = () => appStrings?.holidaySystems || {};
 
     const holidaySystemDiv = document.createElement('div');
-    holidaySystemDiv.style.cssText = 'font-size: 12px; color: #666; margin-bottom: 10px;';
+    holidaySystemDiv.className = 'result-meta';
     const holidaySystemNames = getHolidaySystemNames();
     const systemName = holidaySystemNames[selectedHolidaySystem] || selectedHolidaySystem;
     const holidayInfo = appStrings?.ui?.holidaySystemInfo || 'Using {systemName} public holidays';
@@ -1104,7 +1104,6 @@ function createResultElement(result) {
     if (result.holidayDataWarning) {
         const warningDiv = document.createElement('div');
         warningDiv.className = 'holiday-warning';
-        warningDiv.style.cssText = 'background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; margin-bottom: 15px; border-radius: 4px; font-size: 14px;';
 
         // Safely extract and display the warning message by completely stripping all HTML
         // This prevents any potential HTML injection vulnerabilities
@@ -1195,21 +1194,21 @@ function createResultElement(result) {
 
     // Add calendar export section
     const exportDiv = document.createElement('div');
-    exportDiv.style.cssText = 'margin-top: 20px; padding-top: 15px; border-top: 1px solid #e9ecef; text-align: center;';
+    exportDiv.className = 'result-actions';
 
     const buttonContainer = document.createElement('div');
-    buttonContainer.style.cssText = 'display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;';
+    buttonContainer.className = 'result-action-buttons';
 
     const calendarBtn = document.createElement('button');
     calendarBtn.className = 'calendar-export-trigger';
-    calendarBtn.textContent = '📅 Export to Calendar';
+    calendarBtn.textContent = 'Export to Calendar';
     calendarBtn.onclick = openCalendarModal;
     buttonContainer.appendChild(calendarBtn);
 
     const shareBtn = document.createElement('button');
     shareBtn.className = 'calendar-export-trigger';
     shareBtn.title = 'Copy shareable link';
-    shareBtn.textContent = '🔗 Share Link';
+    shareBtn.textContent = 'Share Link';
     shareBtn.onclick = copyPermalinkToClipboard;
     buttonContainer.appendChild(shareBtn);
 
@@ -1812,18 +1811,11 @@ function showValidationError(inputElement, errorMessage) {
     clearValidationError(inputElement);
 
     // Add error styling
-    inputElement.style.borderColor = '#dc3545';
-    inputElement.style.backgroundColor = '#fff5f5';
+    inputElement.classList.add('input-error');
 
     // Create error message element
     const errorDiv = document.createElement('div');
     errorDiv.className = 'validation-error';
-    errorDiv.style.cssText = `
-        color: #dc3545;
-        font-size: 12px;
-        margin-top: 4px;
-        padding: 2px 0;
-    `;
     errorDiv.textContent = errorMessage;
 
     // Insert error message after the input
@@ -1836,8 +1828,7 @@ function showValidationError(inputElement, errorMessage) {
 // Function to clear validation error
 function clearValidationError(inputElement) {
     // Reset input styling
-    inputElement.style.borderColor = '';
-    inputElement.style.backgroundColor = '';
+    inputElement.classList.remove('input-error');
 
     // Remove error message
     const errorDiv = inputElement.parentNode.querySelector('.validation-error');
@@ -2055,18 +2046,6 @@ function showPermalinkFeedback(message) {
     const feedback = document.createElement('div');
     feedback.className = 'permalink-feedback';
     feedback.textContent = message;
-    feedback.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #28a745;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 4px;
-        z-index: 1000;
-        font-size: 14px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    `;
 
     document.body.appendChild(feedback);
 
@@ -2272,26 +2251,20 @@ if (typeof module !== 'undefined' && module.exports) {
         const footer = document.getElementById('footer-content');
         if (footer && appStrings.footer) {
             const disclaimerDiv = document.createElement('div');
-            disclaimerDiv.style.cssText = 'background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #ffeeba;';
+            disclaimerDiv.className = 'footer-disclaimer';
 
             const disclaimerTitle = document.createElement('p');
-            disclaimerTitle.style.cssText = 'margin: 0; font-weight: 500;';
+            disclaimerTitle.className = 'footer-disclaimer-title';
             disclaimerTitle.textContent = appStrings.footer.disclaimer;
             disclaimerDiv.appendChild(disclaimerTitle);
 
             const disclaimerText = document.createElement('p');
-            disclaimerText.style.cssText = 'margin: 8px 0 0 0;';
-            disclaimerText.textContent = appStrings.footer.disclaimerText;
+            disclaimerText.className = 'footer-disclaimer-text';
+            const regulationLink = '<a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank" rel="noopener">' + appStrings.footer.regulationTitle + '</a>';
+            disclaimerText.innerHTML = `This calculator applies ${regulationLink} for educational purposes only. It is not legal advice and should not be relied upon as such.`;
             disclaimerDiv.appendChild(disclaimerText);
 
             footer.appendChild(disclaimerDiv);
-
-            // Regulation description
-            const regulationP = document.createElement('p');
-
-            const regulationLink = '<a href="https://eur-lex.europa.eu/eli/reg/1971/1182/oj" target="_blank" rel="noopener">' + appStrings.footer.regulationTitle + '</a>';
-            regulationP.innerHTML = interpolateString(appStrings.footer.regulationDescription, { regulationLink });
-            footer.appendChild(regulationP);
 
             // Regulation title
             const regulationTitle = document.createElement('p');
@@ -2299,12 +2272,23 @@ if (typeof module !== 'undefined' && module.exports) {
             // footer.appendChild(regulationTitle);
 
             // Holiday data sources
-            const sourcesTitle = document.createElement('p');
-            sourcesTitle.innerHTML = `<strong>${appStrings.footer.holidayDataSources}</strong>`;
-            footer.appendChild(sourcesTitle);
+            const sourcesDetails = document.createElement('details');
+            sourcesDetails.className = 'footer-sources';
+
+            const sourcesSummary = document.createElement('summary');
+            sourcesSummary.textContent = 'All sources';
+            sourcesDetails.appendChild(sourcesSummary);
+
+            const currentYearSources = document.createElement('div');
+            currentYearSources.className = 'footer-sources-current';
+
+            const currentSourcesTitle = document.createElement('p');
+            currentSourcesTitle.innerHTML = `<strong>${appStrings.footer.holidayDataSources}</strong>`;
+            currentYearSources.appendChild(currentSourcesTitle);
+
+            const currentYearList = document.createElement('ul');
 
             const sourcesList = document.createElement('ul');
-            sourcesList.style.cssText = 'text-align: left; max-width: 600px; margin: 10px auto;';
 
             // Member states source
             const memberStatesLi = document.createElement('li');
@@ -2326,7 +2310,7 @@ if (typeof module !== 'undefined' && module.exports) {
             if (memberStates2026TextParts[1]) {
                 memberStates2026Li.append(memberStates2026TextParts[1]);
             }
-            sourcesList.appendChild(memberStates2026Li);
+            currentYearList.appendChild(memberStates2026Li.cloneNode(true));
 
             // EP source
             const epLi = document.createElement('li');
@@ -2347,7 +2331,7 @@ if (typeof module !== 'undefined' && module.exports) {
             if (textParts[1]) {
                 ep2026Li.append(textParts[1]);
             }
-            sourcesList.appendChild(ep2026Li);
+            currentYearList.appendChild(ep2026Li.cloneNode(true));
 
             // EC source
             const ecLi = document.createElement('li');
@@ -2359,9 +2343,17 @@ if (typeof module !== 'undefined' && module.exports) {
             const ec2026Li = document.createElement('li');
             const ec2026Link = '<a href="https://eur-lex.europa.eu/eli/C/2025/4103/oj" target="_blank" rel="noopener">OJ C, C/2025/4103, 24.7.2025, ELI: http://data.europa.eu/eli/C/2025/4103/oj</a>';
             ec2026Li.innerHTML = interpolateString(appStrings.footer.ec2026Source, { sourceLink: ec2026Link });
-            sourcesList.appendChild(ec2026Li);
+            currentYearList.appendChild(ec2026Li.cloneNode(true));
 
-            footer.appendChild(sourcesList);
+            currentYearSources.appendChild(currentYearList);
+            footer.appendChild(currentYearSources);
+
+            const allSources = document.createElement('div');
+            allSources.className = 'footer-sources-all';
+            allSources.appendChild(sourcesList);
+            sourcesDetails.appendChild(allSources);
+
+            footer.appendChild(sourcesDetails);
 
             // GitHub link
             const githubP = document.createElement('p');
