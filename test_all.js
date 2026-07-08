@@ -87,6 +87,39 @@ async function testArticle33and34() {
     assert.strictEqual(iso(weekendRes.finalEndDate), '2025-04-07T23:59:59.999Z');
 }
 
+async function testEuropeanParliament2027Holidays() {
+    await setHolidaySystem('EP');
+
+    const holidays2027 = await getHolidayDatesForYear('EP', 2027);
+    assert.deepStrictEqual(holidays2027, [
+        '2027-01-01',
+        '2027-03-25',
+        '2027-03-26',
+        '2027-03-29',
+        '2027-05-06',
+        '2027-05-07',
+        '2027-05-17',
+        '2027-07-21',
+        '2027-11-01',
+        '2027-11-02',
+        '2027-12-23',
+        '2027-12-24',
+        '2027-12-25',
+        '2027-12-26',
+        '2027-12-27',
+        '2027-12-28',
+        '2027-12-29',
+        '2027-12-30',
+        '2027-12-31'
+    ]);
+    assert(!holidays2027.includes('2027-06-23'), 'Luxembourg national day remains place-dependent');
+    assert(!holidays2027.includes('2027-07-14'), 'France national day remains place-dependent');
+
+    const easterRes = await calculatePeriod(new Date('2027-03-24T00:00:00Z'), 2, 'working-days');
+    assert.strictEqual(iso(easterRes.finalEndDate), '2027-03-31T23:59:59.999Z');
+    assert.strictEqual(easterRes.holidayDataWarning, null);
+}
+
 // Article 3(5) - ensure two working days
 async function testArticle35() {
     const christmasRes = await calculatePeriod(new Date('2024-12-24T00:00:00'), 2, 'days');
@@ -867,6 +900,7 @@ const tests = [
     { name: 'Article 3(1)', fn: testArticle31 },
     { name: 'Article 3(2)', fn: testArticle32 },
     { name: 'Article 3(3) and 3(4)', fn: testArticle33and34 },
+    { name: 'European Parliament 2027 holidays', fn: testEuropeanParliament2027Holidays },
     { name: 'Article 3(5)', fn: testArticle35 },
     { name: 'Article 3(4) and 3(5) together', fn: testArticle34and35HolidayPeriod },
     { name: 'Country-specific holidays (Austria vs Germany)', fn: testCountrySpecificHolidays },
