@@ -2345,6 +2345,12 @@ if (typeof module !== 'undefined' && module.exports) {
             ec2026Li.innerHTML = interpolateString(appStrings.footer.ec2026Source, { sourceLink: ec2026Link });
             currentYearList.appendChild(ec2026Li.cloneNode(true));
 
+            // EC 2027 source
+            const ec2027Li = document.createElement('li');
+            const ec2027Link = '<a href="https://eur-lex.europa.eu/eli/C/2025/4102/oj/eng" target="_blank" rel="noopener">OJ C, C/2025/4102, 24.7.2025, ELI: http://data.europa.eu/eli/C/2025/4102/oj</a>';
+            ec2027Li.innerHTML = interpolateString(appStrings.footer.ec2027Source, { sourceLink: ec2027Link });
+            currentYearList.appendChild(ec2027Li.cloneNode(true));
+
             currentYearSources.appendChild(currentYearList);
             footer.appendChild(currentYearSources);
 
