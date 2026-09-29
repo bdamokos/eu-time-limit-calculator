@@ -32,6 +32,10 @@ The calculator uses official 2025 public holiday data from:
 - **European Parliament**: [Official Notice (Luxembourg, 10 October 2025)](https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2026_en.pdf)
 - **European Commission**: [OJ C, C/2025/4103, 24.7.2025](https://eur-lex.europa.eu/eli/C/2025/4103/oj) 
 
+2027 public holiday data from:
+- **European Parliament (Brussels)**: [Official Notice: Public holidays and office closing days during 2027 (Luxembourg, 2 July 2026)](https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2027_en.pdf) (accessed 29 September 2026). Includes the office closure from 23 to 31 December. National holidays depend on the place of employment; this calendar uses Belgium’s 21 July, excluding Luxembourg’s 23 June and France’s 14 July.
+- **European Commission**: [OJ C, C/2025/4102, 24.7.2025, ELI: http://data.europa.eu/eli/C/2025/4102/oj](https://eur-lex.europa.eu/eli/C/2025/4102/oj/eng)
+
 ## Usage
 
 1. Select an event date and time
