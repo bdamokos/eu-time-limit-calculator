@@ -2333,6 +2333,12 @@ if (typeof module !== 'undefined' && module.exports) {
             }
             currentYearList.appendChild(ep2026Li.cloneNode(true));
 
+            // EP 2027 source (Brussels calendar)
+            const ep2027Li = document.createElement('li');
+            const ep2027Link = '<a href="https://www.europarl.europa.eu/traineeships/welcomePack/holidays-2027_en.pdf" target="_blank" rel="noopener">European Parliament Official Notice: Public holidays and office closing days during 2027, Luxembourg, 2 July 2026 (accessed 29.09.2026)</a>';
+            ep2027Li.innerHTML = interpolateString(appStrings.footer.ep2027Source, { sourceLink: ep2027Link });
+            currentYearList.appendChild(ep2027Li);
+
             // EC source
             const ecLi = document.createElement('li');
             const ecLink = '<a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:C_202402219" target="_blank" rel="noopener">OJ C, C/2024/2219, 22.3.2024, ELI: http://data.europa.eu/eli/C/2024/2219/oj</a>';
