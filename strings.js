@@ -53,6 +53,7 @@ const strings = {
 
     // UI Labels and descriptions
     ui: {
+        calendarTimeJump: "Time jump: {count} months not shown",
         endDateLabel: "End Date: {endDate}",
         holidaySystemInfo: "Using {systemName} public holidays",
         eventTimeRequired: "Only required for hour-based calculations",

@@ -852,6 +852,8 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
     return result;
 }
 
+const MAX_RENDERED_CALENDAR_MONTHS = 12;
+
 function renderCalendar(result) {
     const container = document.getElementById('calendar-container');
     container.replaceChildren(); // Clear previous content safely
@@ -916,19 +918,38 @@ function renderCalendar(result) {
     const displayStart = new Date(Math.min(startDate, endDate));
     const displayEnd = new Date(Math.max(startDate, endDate));
 
-    // Get first day of start month and last day of end month
-    const firstDisplayMonth = new Date(displayStart.getFullYear(), displayStart.getMonth(), 1);
-    const lastDisplayMonth = new Date(displayEnd.getFullYear(), displayEnd.getMonth() + 1, 0);
+    const firstDisplayMonth = new Date(displayStart);
+    firstDisplayMonth.setDate(1);
+    const lastDisplayMonth = new Date(displayEnd);
+    lastDisplayMonth.setDate(1);
+    const monthCount = (displayEnd.getFullYear() - displayStart.getFullYear()) * 12
+        + displayEnd.getMonth() - displayStart.getMonth() + 1;
+    const abbreviated = monthCount > MAX_RENDERED_CALENDAR_MONTHS;
 
-    // Generate calendar for each month in the range
-    let currentDate = new Date(firstDisplayMonth);
-    while (currentDate <= lastDisplayMonth) {
+    // Bound rendering before allocating month DOM, independently of calculation validation.
+    const months = abbreviated
+        ? [firstDisplayMonth, lastDisplayMonth]
+        : Array.from({ length: monthCount }, (_, index) => {
+            const month = new Date(firstDisplayMonth);
+            month.setMonth(month.getMonth() + index);
+            return month;
+        });
+
+    months.forEach((month, index) => {
+        if (abbreviated && index === 1) {
+            const gap = document.createElement('p');
+            gap.className = 'calendar-time-jump';
+            gap.textContent = interpolateString(
+                appStrings?.ui?.calendarTimeJump || 'Time jump: {count} months not shown',
+                { count: monthCount - 2 }
+            );
+            monthsContainer.appendChild(gap);
+        }
         const monthWrapper = document.createElement('div');
         monthWrapper.className = 'calendar-month-wrapper';
         monthsContainer.appendChild(monthWrapper);
-        renderMonthCalendar(currentDate, result, monthWrapper);
-        currentDate.setMonth(currentDate.getMonth() + 1);
-    }
+        renderMonthCalendar(month, result, monthWrapper);
+    });
 }
 
 /**
@@ -2061,6 +2082,7 @@ function showPermalinkFeedback(message) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         calculatePeriod,
+        renderCalendar,
         setHolidaySystem: async function (system) {
             selectedHolidaySystem = sanitizeHolidaySystem(system);
             await ensureHolidayYearLoaded(selectedHolidaySystem, CURRENT_YEAR);

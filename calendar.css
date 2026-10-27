@@ -188,6 +188,24 @@
     width: 280px;
 }
 
+.calendar-time-jump {
+    flex-basis: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    color: var(--muted, oklch(0.475 0.018 232));
+    font-size: 14px;
+    text-align: center;
+}
+
+.calendar-time-jump::before,
+.calendar-time-jump::after {
+    content: '';
+    flex: 1;
+    border-top: 1px dashed var(--border-strong, oklch(0.77 0.025 232));
+}
+
 /* Modal Styles */
 .modal {
     position: fixed;

@@ -4,6 +4,7 @@ process.env.TZ = 'UTC';
 const assert = require('assert');
 const {
   calculatePeriod,
+  renderCalendar,
   setHolidaySystem,
   getHolidaySystem,
   holidayData,
@@ -21,6 +22,65 @@ try {
 
 function iso(date) {
     return date.toISOString();
+}
+
+function testBoundedCalendarRendering() {
+    let allocations = 0;
+    function element() {
+        assert(++allocations <= 2000, 'Calendar DOM allocation must stay bounded');
+        return {
+            children: [],
+            style: {},
+            classList: { add() {} },
+            appendChild(child) { this.children.push(child); },
+            replaceChildren() { this.children = []; }
+        };
+    }
+    const container = element();
+    const previousDocument = global.document;
+    global.document = {
+        getElementById(id) {
+            assert.strictEqual(id, 'calendar-container');
+            return container;
+        },
+        createElement: element
+    };
+
+    function check(start, end, expectedMonths, skippedMonths = 0) {
+        allocations = 0;
+        const startDate = new Date(start);
+        const finalEndDate = new Date(end);
+        renderCalendar({ startDate, finalEndDate, initialEndDate: finalEndDate, eventDate: startDate });
+        assert.strictEqual(container.children.length, 2, 'Re-render must replace the previous calendar');
+        const children = container.children[1].children;
+        const months = children.filter(child => child.className === 'calendar-month-wrapper');
+        assert.strictEqual(months.length, expectedMonths);
+        const gaps = children.filter(child => child.className === 'calendar-time-jump');
+        assert.strictEqual(gaps.length, skippedMonths ? 1 : 0);
+        if (skippedMonths) {
+            assert.strictEqual(children[1], gaps[0], 'Time jump must appear between endpoint calendars');
+            assert.strictEqual(gaps[0].textContent, `Time jump: ${skippedMonths} months not shown`);
+        }
+        const endpoints = [new Date(Math.min(startDate, finalEndDate)), new Date(Math.max(startDate, finalEndDate))];
+        [months[0], months[months.length - 1]].forEach((month, index) => {
+            assert.strictEqual(month.children[0].textContent,
+                endpoints[index].toLocaleString('default', { month: 'long', year: 'numeric' }));
+        });
+        assert(months[0].children[1].children.some(week => week.children.some(day => day.textContent === 1)),
+            'The actual day grid must still render');
+    }
+
+    try {
+        check('2025-01-01', '2025-12-31', 12);
+        check('2025-01-01', '2026-01-31', 2, 11);
+        check('2025-12-31', '2026-01-01', 2);
+        check('2025-01-01', '9999-12-31', 2, 95700 - 2);
+        check('9999-12-31', '2025-01-01', 2, 95700 - 2);
+        check('2025-02-01', '2025-02-28', 1);
+    } finally {
+        if (previousDocument === undefined) delete global.document;
+        else global.document = previousDocument;
+    }
 }
 
 // Article 3(1) - skipping the event hour/day
@@ -919,6 +979,7 @@ async function testLocalDateParsing() {
 console.log('Running tests...');
 
 const tests = [
+    { name: 'Bounded calendar rendering and visible time jumps', fn: testBoundedCalendarRendering },
     // String handling tests - run first to ensure infrastructure works
     { name: 'String interpolation functionality', fn: testStringInterpolation },
     { name: 'Strings structure and content', fn: testStringsStructure },
