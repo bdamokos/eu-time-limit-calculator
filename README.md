@@ -76,6 +76,18 @@ or if a date becomes invalid or stops advancing. The browser displays these erro
 in the result area. `calculateDeadline` returns `{ ok: false, errors, input }`;
 direct `calculatePeriod` calls reject with an error.
 
+All other period types also require non-zero safe integers. Both engines limit
+calendar distance from the event day to each start/end date to 50,000 days
+(in either direction), checked before daily counting or holiday-year allocation.
+A general calculation shares a 50,000-iteration budget across counting and
+working-day extensions; an inclusive count or extension can reach that budget
+before the span limit. Dates must stay valid and date walks must advance.
+Exported holiday-coverage checks also reject spans over 50,000 calendar days.
+These limits use local calendar days, so daylight-saving changes do not alter
+them. Rejected calculations use the same browser alert and module error response
+above and never return partial counts. Numeric strings are parsed in full;
+malformed values such as `2days` and unsafe values such as `1e21` are rejected.
+
 ## Legal Implementation
 
 This calculator implements the time calculation rules from **EU Regulation 1182/71**:

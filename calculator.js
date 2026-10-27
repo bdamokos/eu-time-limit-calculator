@@ -192,6 +192,60 @@ function createWorkingDayGuard(periodValue) {
     };
 }
 
+// Bound calendar distance before daily walks or holiday-year allocation.
+const MAX_CALENDAR_SPAN_DAYS = 50000;
+const MAX_CALENDAR_ITERATIONS = 50000;
+
+function calendarDayNumber(date) {
+    if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
+        throw new RangeError('Calculation exceeded the supported date range.');
+    }
+    // Compare local calendar days, independently of DST and years 0–99.
+    const day = new Date(0);
+    day.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+    if (!Number.isFinite(day.getTime())) {
+        throw new RangeError('Calculation exceeded the supported date range.');
+    }
+    return day.getTime() / 86400000;
+}
+
+function checkCalendarSpan(startDate, endDate) {
+    if (Math.abs(calendarDayNumber(endDate) - calendarDayNumber(startDate)) > MAX_CALENDAR_SPAN_DAYS) {
+        throw new RangeError(`Calculation span must not exceed ${MAX_CALENDAR_SPAN_DAYS} calendar days.`);
+    }
+}
+
+function createCalendarGuard(eventDateTime, periodValue) {
+    if (!Number.isSafeInteger(periodValue) || periodValue === 0) {
+        throw new RangeError('Period must be a non-zero safe integer.');
+    }
+    let iterations = 0;
+    function check(date) {
+        checkCalendarSpan(eventDateTime, date);
+    }
+    check(eventDateTime);
+    return {
+        check,
+        visit(date) {
+            check(date);
+            if (++iterations > MAX_CALENDAR_ITERATIONS) {
+                throw new RangeError('Calculation exceeded the calendar iteration limit.');
+            }
+        },
+        advance(date, direction) {
+            check(date);
+            const previousTime = date.getTime();
+            date.setDate(date.getDate() + direction);
+            // The counting loop may advance once past its inclusive endpoint.
+            // Validate that sentinel here; visits and returned dates enforce the span.
+            calendarDayNumber(date);
+            if ((date.getTime() - previousTime) * direction <= 0) {
+                throw new RangeError('Calculation could not advance the date.');
+            }
+        }
+    };
+}
+
 function advanceCalculationDate(date, direction, guard) {
     if (guard) guard.advance(date, direction);
     else date.setDate(date.getDate() + direction);
@@ -209,6 +263,7 @@ async function findNextWorkingDay(date, holidaySystem, holidayDataBaseUrl, guard
 }
 
 function getYearsInRange(startDate, endDate) {
+    checkCalendarSpan(startDate, endDate);
     const years = [];
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
@@ -276,6 +331,7 @@ export function formatDateTime(date, format = DEFAULT_DATE_FORMAT) {
 }
 
 export async function checkHolidayDataCoverage(startDate, endDate, holidaySystem, options = {}) {
+    checkCalendarSpan(startDate, endDate);
     const targetSystem = sanitizeHolidaySystem(holidaySystem);
     const availableYears = await getHolidayDataYears(targetSystem, options);
     const startYear = startDate.getFullYear();
@@ -349,8 +405,10 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
         throw new Error('periodValue must be a non-zero integer');
     }
 
-    const workingDayGuard = type === 'working-days' ? createWorkingDayGuard(periodValue) : null;
-    workingDayGuard?.check(eventDateTime);
+    const calculationGuard = type === 'working-days'
+        ? createWorkingDayGuard(periodValue)
+        : createCalendarGuard(eventDateTime, periodValue);
+    calculationGuard?.check(eventDateTime);
 
     const result = {
         eventDate: new Date(eventDateTime),
@@ -387,11 +445,11 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
             eventDate: formatDate(startDate, dateFormat)
         }));
     } else if (isRetroactive) {
-        advanceCalculationDate(startDate, -1, workingDayGuard);
+        advanceCalculationDate(startDate, -1, calculationGuard);
         startDate.setHours(23, 59, 59, 999);
         result.appliedRules.push('Article 3(1): Event day not counted for retroactive period');
     } else {
-        advanceCalculationDate(startDate, 1, workingDayGuard);
+        advanceCalculationDate(startDate, 1, calculationGuard);
         startDate.setHours(0, 0, 0, 0);
         result.appliedRules.push('Article 3(1): Event day not counted');
         result.explanation.push(interpolateString('The period starts from the next day ({startDate}).', {
@@ -399,7 +457,7 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
         }));
     }
 
-    workingDayGuard?.check(startDate);
+    calculationGuard?.check(startDate);
     result.startDate = new Date(startDate);
 
     let endDate = new Date(startDate);
@@ -419,22 +477,22 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
 
         if (isRetroactive) {
             while (remainingDays > 0) {
-                workingDayGuard.visit(currentDate);
-                advanceCalculationDate(currentDate, -1, workingDayGuard);
+                calculationGuard.visit(currentDate);
+                advanceCalculationDate(currentDate, -1, calculationGuard);
                 if (await isWorkingDay(currentDate, holidaySystem, holidayDataBaseUrl)) {
-                    remainingDays = workingDayGuard.decrement(remainingDays);
+                    remainingDays = calculationGuard.decrement(remainingDays);
                 }
             }
             endDate = new Date(currentDate);
             endDate.setHours(0, 0, 0, 0);
         } else {
             while (remainingDays > 0) {
-                workingDayGuard.visit(currentDate);
+                calculationGuard.visit(currentDate);
                 if (await isWorkingDay(currentDate, holidaySystem, holidayDataBaseUrl)) {
-                    remainingDays = workingDayGuard.decrement(remainingDays);
+                    remainingDays = calculationGuard.decrement(remainingDays);
                 }
                 if (remainingDays > 0) {
-                    advanceCalculationDate(currentDate, 1, workingDayGuard);
+                    advanceCalculationDate(currentDate, 1, calculationGuard);
                 }
             }
             endDate = new Date(currentDate);
@@ -490,11 +548,11 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
         result.appliedRules.push(`Article 3(2)(c): ${absolutePeriodValue} year period calculated`);
     }
 
-    workingDayGuard?.check(endDate);
+    calculationGuard?.check(endDate);
     result.initialEndDate = new Date(endDate);
 
     if (type !== 'hours' && !isRetroactive && !(await isWorkingDay(endDate, holidaySystem, holidayDataBaseUrl))) {
-        const nextWorkDay = await findNextWorkingDay(endDate, holidaySystem, holidayDataBaseUrl, workingDayGuard);
+        const nextWorkDay = await findNextWorkingDay(endDate, holidaySystem, holidayDataBaseUrl, calculationGuard);
         nextWorkDay.setHours(23, 59, 59, 999);
         endDate = nextWorkDay;
         result.appliedRules.push('Article 3(4): End date extended to next working day');
@@ -508,11 +566,11 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
         endDateCopy.setHours(23, 59, 59, 999);
 
         while (currentDate <= endDateCopy) {
-            workingDayGuard?.visit(currentDate);
+            calculationGuard?.visit(currentDate);
             if (await isWorkingDay(currentDate, holidaySystem, holidayDataBaseUrl)) {
                 workingDays++;
             }
-            advanceCalculationDate(currentDate, 1, workingDayGuard);
+            advanceCalculationDate(currentDate, 1, calculationGuard);
         }
 
         result.workingDaysCount = workingDays;
@@ -523,16 +581,16 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
                 prevWorkDay.setHours(0, 0, 0, 0);
 
                 while (true) {
-                    workingDayGuard?.visit(prevWorkDay);
+                    calculationGuard?.visit(prevWorkDay);
                     if (await isWorkingDay(prevWorkDay, holidaySystem, holidayDataBaseUrl)) break;
-                    advanceCalculationDate(prevWorkDay, -1, workingDayGuard);
+                    advanceCalculationDate(prevWorkDay, -1, calculationGuard);
                 }
 
                 startDate = prevWorkDay;
                 result.startDate = new Date(startDate);
                 result.appliedRules.push('Article 3(5): Period extended backward to include at least two working days');
             } else {
-                let nextWorkDay = await findNextWorkingDay(endDateCopy, holidaySystem, holidayDataBaseUrl, workingDayGuard);
+                let nextWorkDay = await findNextWorkingDay(endDateCopy, holidaySystem, holidayDataBaseUrl, calculationGuard);
                 nextWorkDay.setHours(23, 59, 59, 999);
 
                 const requiredAdditionalWorkingDays = 2 - workingDays;
@@ -540,13 +598,13 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
                 const currentWorkDay = new Date(nextWorkDay);
 
                 while (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
-                    workingDayGuard?.visit(currentWorkDay);
+                    calculationGuard?.visit(currentWorkDay);
                     if (await isWorkingDay(currentWorkDay, holidaySystem, holidayDataBaseUrl)) {
                         foundAdditionalWorkingDays++;
                     }
 
                     if (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
-                        advanceCalculationDate(currentWorkDay, 1, workingDayGuard);
+                        advanceCalculationDate(currentWorkDay, 1, calculationGuard);
                     }
                 }
 
@@ -557,8 +615,8 @@ export async function calculatePeriod(eventDateTime, periodValue, periodType, op
         }
     }
 
-    workingDayGuard?.check(startDate);
-    workingDayGuard?.check(endDate);
+    calculationGuard?.check(startDate);
+    calculationGuard?.check(endDate);
     result.finalEndDate = endDate;
 
     const periodStart = new Date(Math.min(result.startDate, result.finalEndDate));
@@ -599,9 +657,8 @@ export async function calculateDeadline(input = {}) {
     const date = input.date;
     const time = input.time || '';
     const type = sanitizePeriodType(input.type);
-    const period = type === 'working-days'
-        ? (typeof input.period === 'number' || typeof input.period === 'string' ? Number(input.period) : NaN)
-        : Number.parseInt(input.period, 10);
+    const period = typeof input.period === 'number' || typeof input.period === 'string'
+        ? Number(input.period) : NaN;
     const holidays = sanitizeHolidaySystem(input.holidays || input.holidaySystem || DEFAULT_HOLIDAY_SYSTEM);
     const format = sanitizeDateFormat(input.format || DEFAULT_DATE_FORMAT);
 
@@ -664,7 +721,7 @@ export async function calculateDeadline(input = {}) {
             result: serializeCalculationResult(result, { format })
         };
     } catch (error) {
-        if (type !== 'working-days' || !(error instanceof RangeError)) throw error;
+        if (!(error instanceof RangeError)) throw error;
         return { ok: false, errors: [error.message], input: normalizedInput };
     }
 }
