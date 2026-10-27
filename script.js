@@ -1972,12 +1972,17 @@ async function handleSubmit(event) {
     resultContainer.appendChild(createResultElement(result));
 }
 
+let latestCalculationId = 0;
+
 async function calculatePeriodForForm(eventDateTime, periodValue, periodType) {
+    const calculationId = ++latestCalculationId;
     const resultContainer = document.getElementById('result');
     try {
-        return await calculatePeriod(eventDateTime, periodValue, periodType);
+        const result = await calculatePeriod(eventDateTime, periodValue, periodType);
+        return calculationId === latestCalculationId ? result : null;
     } catch (error) {
         if (periodType !== 'working-days' || !(error instanceof RangeError)) throw error;
+        if (calculationId !== latestCalculationId) return null;
         const message = document.createElement('p');
         message.setAttribute('role', 'alert');
         message.textContent = error.message;

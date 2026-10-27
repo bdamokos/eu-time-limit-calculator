@@ -181,4 +181,26 @@ async function testBrowserForm() {
     await update(() => nodes.periodValue.listeners.input[0]());
     assertError();
     assert.deepEqual(errors, [], 'Form rejection must not become an unhandled calculation error');
+
+    // Control completion order to reproduce a slow accepted calculation followed by rejection.
+    context.pending = [];
+    vm.runInContext('calculatePeriod = () => new Promise((resolve, reject) => pending.push({ resolve, reject }));', context);
+    const olderSuccess = vm.runInContext("calculatePeriodForForm(new Date(), 1000, 'working-days')", context);
+    const newerRejection = vm.runInContext("calculatePeriodForForm(new Date(), 10001, 'working-days')", context);
+    context.pending[1].reject(vm.runInContext("new RangeError('Working-day period is too large')", context));
+    assert.equal(await newerRejection, null);
+    const rejectionMessage = nodes.result.children[0];
+    context.pending[0].resolve({ finalEndDate: new Date() });
+    assert.equal(await olderSuccess, null, 'A stale success must not replace the current rejection');
+    assert.equal(nodes.result.children[0], rejectionMessage);
+
+    const olderRejection = vm.runInContext("calculatePeriodForForm(new Date(), 1000, 'working-days')", context);
+    const newerSuccess = vm.runInContext("calculatePeriodForForm(new Date(), 2, 'working-days')", context);
+    const latestResult = { finalEndDate: new Date() };
+    context.pending[3].resolve(latestResult);
+    assert.equal(await newerSuccess, latestResult);
+    nodes.result.replaceChildren(latestResult);
+    context.pending[2].reject(vm.runInContext("new RangeError('Working-day calculation exceeded the date range')", context));
+    assert.equal(await olderRejection, null);
+    assert.equal(nodes.result.children[0], latestResult, 'A stale rejection must not replace the current success');
 }
