@@ -70,6 +70,12 @@ Supported options:
 - `holidays`: optional holiday system code, default `EP`
 - `format`: optional display format, default `dmy-text`
 
+Working-day periods must be non-zero safe integers from -10,000 to 10,000.
+Both engines stop after 50,000 calendar iterations per working-day calculation,
+or if a date becomes invalid or stops advancing. The browser displays these errors
+in the result area. `calculateDeadline` returns `{ ok: false, errors, input }`;
+direct `calculatePeriod` calls reject with an error.
+
 ## Legal Implementation
 
 This calculator implements the time calculation rules from **EU Regulation 1182/71**:

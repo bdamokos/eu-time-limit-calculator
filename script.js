@@ -368,16 +368,64 @@ async function isWorkingDay(date) {
     return !(await isHoliday(date));
 }
 
+// Keep these guards identical in the browser and standalone engines.
+const MAX_WORKING_DAYS = 10000;
+const MAX_WORKING_DAY_ITERATIONS = 50000;
+
+function createWorkingDayGuard(periodValue) {
+    if (!Number.isSafeInteger(periodValue) || periodValue === 0 || Math.abs(periodValue) > MAX_WORKING_DAYS) {
+        throw new RangeError(`Working-day period must be a non-zero safe integer between -${MAX_WORKING_DAYS} and ${MAX_WORKING_DAYS}.`);
+    }
+    let iterations = 0;
+    function check(date) {
+        if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
+            throw new RangeError('Working-day calculation exceeded the supported date range.');
+        }
+    }
+    return {
+        check,
+        visit(date) {
+            check(date);
+            if (++iterations > MAX_WORKING_DAY_ITERATIONS) {
+                throw new RangeError('Working-day calculation exceeded the calendar iteration limit.');
+            }
+        },
+        advance(date, direction) {
+            check(date);
+            const previousTime = date.getTime();
+            date.setDate(date.getDate() + direction);
+            check(date);
+            if ((date.getTime() - previousTime) * direction <= 0) {
+                throw new RangeError('Working-day calculation could not advance the date.');
+            }
+        },
+        decrement(remainingDays) {
+            const next = remainingDays - 1;
+            if (!Number.isSafeInteger(next) || next < 0 || next >= remainingDays) {
+                throw new RangeError('Working-day calculation could not decrease the counter.');
+            }
+            return next;
+        }
+    };
+}
+
+function advanceCalculationDate(date, direction, guard) {
+    if (guard) guard.advance(date, direction);
+    else date.setDate(date.getDate() + direction);
+}
+
 /**
  * Finds the next calendar date after the given date that is a working day.
  * @param {Date} date - The starting date; the search begins from the following calendar day.
  * @returns {Promise<Date>} The next date that is a working day.
  */
-async function findNextWorkingDay(date) {
+async function findNextWorkingDay(date, guard) {
     let nextDay = new Date(date);
-    nextDay.setDate(nextDay.getDate() + 1);
-    while (!(await isWorkingDay(nextDay))) {
-        nextDay.setDate(nextDay.getDate() + 1);
+    advanceCalculationDate(nextDay, 1, guard);
+    while (true) {
+        guard?.visit(nextDay);
+        if (await isWorkingDay(nextDay)) break;
+        advanceCalculationDate(nextDay, 1, guard);
     }
     return nextDay;
 }
@@ -490,6 +538,9 @@ function updateEventDateDisplay() {
  *   - {string|null} holidayDataWarning - Human-readable warning when holiday data coverage for the period is incomplete, or `null` when coverage is complete.
  */
 async function calculatePeriod(eventDateTime, periodValue, periodType) {
+    const workingDayGuard = periodType === 'working-days' ? createWorkingDayGuard(periodValue) : null;
+    workingDayGuard?.check(eventDateTime);
+
     const result = {
         eventDate: new Date(eventDateTime),
         startDate: null,
@@ -537,14 +588,14 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
     } else {
         if (isRetroactive) {
             // For retroactive calculations, skip the event day by starting from the previous day
-            startDate.setDate(startDate.getDate() - 1);
+            advanceCalculationDate(startDate, -1, workingDayGuard);
             startDate.setHours(23, 59, 59, 999); // Start from end of previous day
             const rule = appStrings?.appliedRules?.article31DaySkippedRetroactive || 'Article 3(1) applied';
             result.appliedRules.push(rule);
             const explanation = appStrings?.articles?.article31DaysRetroactive || 'Article 3(1) explanation';
             result.explanation.push(interpolateString(explanation, { eventDate: formatDate(eventDateTime), startDate: formatDate(startDate) }));
         } else {
-            startDate.setDate(startDate.getDate() + 1);
+            advanceCalculationDate(startDate, 1, workingDayGuard);
             startDate.setHours(0, 0, 0, 0);
             const rule = appStrings?.appliedRules?.article31DaySkipped || 'Article 3(1) applied';
             result.appliedRules.push(rule);
@@ -554,6 +605,7 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
     }
 
     // Store the actual start date after applying Article 3(1)
+    workingDayGuard?.check(startDate);
     result.startDate = new Date(startDate);
 
     // Step 2: Apply Article 3(2) - Calculate the period
@@ -578,20 +630,22 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
 
         if (isRetroactive) {
             while (remainingDays > 0) {
-                currentDate.setDate(currentDate.getDate() - 1);
+                workingDayGuard.visit(currentDate);
+                advanceCalculationDate(currentDate, -1, workingDayGuard);
                 if (await isWorkingDay(currentDate)) {
-                    remainingDays--;
+                    remainingDays = workingDayGuard.decrement(remainingDays);
                 }
             }
             endDate = new Date(currentDate);
             endDate.setHours(0, 0, 0, 0);
         } else {
             while (remainingDays > 0) {
+                workingDayGuard.visit(currentDate);
                 if (await isWorkingDay(currentDate)) {
-                    remainingDays--;
+                    remainingDays = workingDayGuard.decrement(remainingDays);
                 }
                 if (remainingDays > 0) {
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    advanceCalculationDate(currentDate, 1, workingDayGuard);
                 }
             }
             endDate = new Date(currentDate);
@@ -702,11 +756,12 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
         }));
     }
 
+    workingDayGuard?.check(endDate);
     result.initialEndDate = new Date(endDate);
 
     // Step 3: Apply Article 3(4) - Extend to next working day if needed
     if (periodType !== 'hours' && !isRetroactive && !(await isWorkingDay(endDate))) {
-        const nextWorkDay = await findNextWorkingDay(endDate);
+        const nextWorkDay = await findNextWorkingDay(endDate, workingDayGuard);
         nextWorkDay.setHours(23, 59, 59, 999);
         endDate = nextWorkDay;
         const article34Rule = appStrings?.appliedRules?.article34Extension || 'Article 3(4) applied';
@@ -734,11 +789,12 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
 
         // First, count working days in the original period
         while (currentDate <= endDateCopy) {
+            workingDayGuard?.visit(currentDate);
             if (await isWorkingDay(currentDate)) {
                 workingDays++;
                 console.log(`Found working day: ${formatDate(currentDate)}`);
             }
-            currentDate.setDate(currentDate.getDate() + 1);
+            advanceCalculationDate(currentDate, 1, workingDayGuard);
         }
 
         result.workingDaysCount = workingDays;
@@ -751,8 +807,10 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
                 prevWorkDay.setHours(0, 0, 0, 0);
 
                 // Find the previous working day
-                while (!(await isWorkingDay(prevWorkDay))) {
-                    prevWorkDay.setDate(prevWorkDay.getDate() - 1);
+                while (true) {
+                    workingDayGuard?.visit(prevWorkDay);
+                    if (await isWorkingDay(prevWorkDay)) break;
+                    advanceCalculationDate(prevWorkDay, -1, workingDayGuard);
                 }
 
                 // Count working days in the backward extended period
@@ -761,11 +819,12 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
                 workingDays = 0;
 
                 while (currentDate <= endDateCopy) {
+                    workingDayGuard?.visit(currentDate);
                     if (await isWorkingDay(currentDate)) {
                         workingDays++;
                         console.log(`Found working day in backward extended period: ${formatDate(currentDate)}`);
                     }
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    advanceCalculationDate(currentDate, 1, workingDayGuard);
                 }
 
                 console.log(`Total working days in backward extended period: ${workingDays}`);
@@ -792,7 +851,7 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
                 }
             } else {
                 // For forward periods, extend forward to include at least two working days total
-                let nextWorkDay = await findNextWorkingDay(endDateCopy);
+                let nextWorkDay = await findNextWorkingDay(endDateCopy, workingDayGuard);
                 nextWorkDay.setHours(23, 59, 59, 999);
 
                 // We already found one working day, so we need to find at least one more
@@ -802,13 +861,14 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
                 let currentWorkDay = new Date(nextWorkDay);
 
                 while (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
+                    workingDayGuard?.visit(currentWorkDay);
                     if (await isWorkingDay(currentWorkDay)) {
                         foundAdditionalWorkingDays++;
                         console.log(`Found additional working day: ${formatDate(currentWorkDay)}`);
                     }
 
                     if (foundAdditionalWorkingDays < requiredAdditionalWorkingDays) {
-                        currentWorkDay.setDate(currentWorkDay.getDate() + 1);
+                        advanceCalculationDate(currentWorkDay, 1, workingDayGuard);
                     }
                 }
 
@@ -836,6 +896,8 @@ async function calculatePeriod(eventDateTime, periodValue, periodType) {
         }
     }
 
+    workingDayGuard?.check(startDate);
+    workingDayGuard?.check(endDate);
     result.finalEndDate = endDate;
 
     // Check holiday data coverage for the calculated period
@@ -1886,8 +1948,9 @@ async function handleSubmit(event) {
 
     const eventDate = document.getElementById('eventDate').value;
     const eventTime = document.getElementById('eventTime').value;
-    const periodValue = parseInt(document.getElementById('periodValue').value);
     const periodType = document.getElementById('periodType').value;
+    const rawPeriod = document.getElementById('periodValue').value;
+    const periodValue = periodType === 'working-days' ? Number(rawPeriod) : parseInt(rawPeriod);
 
     // Validate time input for hour-based calculations
     if (periodType === 'hours' && !eventTime) {
@@ -1902,10 +1965,30 @@ async function handleSubmit(event) {
         return;
     }
 
-    const result = await calculatePeriod(eventDateTime, periodValue, periodType);
+    const result = await calculatePeriodForForm(eventDateTime, periodValue, periodType);
+    if (!result) return;
     const resultContainer = document.getElementById('result');
     resultContainer.replaceChildren(); // Clear previous content safely
     resultContainer.appendChild(createResultElement(result));
+}
+
+let latestCalculationId = 0;
+
+async function calculatePeriodForForm(eventDateTime, periodValue, periodType) {
+    const calculationId = ++latestCalculationId;
+    const resultContainer = document.getElementById('result');
+    try {
+        const result = await calculatePeriod(eventDateTime, periodValue, periodType);
+        return calculationId === latestCalculationId ? result : null;
+    } catch (error) {
+        if (periodType !== 'working-days' || !(error instanceof RangeError)) throw error;
+        if (calculationId !== latestCalculationId) return null;
+        const message = document.createElement('p');
+        message.setAttribute('role', 'alert');
+        message.textContent = error.message;
+        resultContainer.replaceChildren(message);
+        return null;
+    }
 }
 
 // Permalink functionality
@@ -2421,11 +2504,12 @@ if (typeof module !== 'undefined' && module.exports) {
     async function updateCalculation() {
         const eventDate = document.getElementById('eventDate').value;
         const eventTime = document.getElementById('eventTime').value;
-        const periodValue = parseInt(document.getElementById('periodValue').value);
         const periodType = document.getElementById('periodType').value;
+        const rawPeriod = document.getElementById('periodValue').value;
+        const periodValue = periodType === 'working-days' ? Number(rawPeriod) : parseInt(rawPeriod);
 
         // Validate inputs
-        if (!eventDate || !periodValue || isNaN(periodValue)) {
+        if (!eventDate || !rawPeriod || (periodType !== 'working-days' && (!periodValue || isNaN(periodValue)))) {
             return;
         }
 
@@ -2440,7 +2524,8 @@ if (typeof module !== 'undefined' && module.exports) {
             return;
         }
 
-        const result = await calculatePeriod(eventDateTime, periodValue, periodType);
+        const result = await calculatePeriodForForm(eventDateTime, periodValue, periodType);
+        if (!result) return;
         const resultContainer = document.getElementById('result');
         resultContainer.replaceChildren(); // Clear previous content safely
         resultContainer.appendChild(createResultElement(result));
